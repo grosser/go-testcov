@@ -33,7 +33,7 @@ func filter(ss []string, test func(string) bool) (filtered []string) {
 // TODO move into a utils package ? ... how does coverage work then ?
 // Run a command and stream output to stdout/err, but return an exit code
 // https://stackoverflow.com/questions/10385551/get-exit-code-go
-func runCommand(name string, argv []string) (exitCode int) {
+func runCommand(name string, argv ...string) (exitCode int) {
 	cmd := exec.Command(name, argv...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -58,12 +58,11 @@ func runCommand(name string, argv []string) (exitCode int) {
 	return
 }
 
-// TODO use multi-string interface instead
 func CovTest(argv []string) (exitCode int) {
 	path := "coverage.out"
 	argv = append([]string{"test"}, argv...)
 	argv = append(argv, "-cover", "-coverprofile=" +path)
-	exitCode = runCommand("go", argv)
+	exitCode = runCommand("go", argv...)
 	if(exitCode == 0) {
 		uncovered := Uncovered(path)
 		if(len(uncovered) != 0) { // TODO heading and more info maybe

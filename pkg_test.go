@@ -160,16 +160,13 @@ var _ = Describe("go_scov", func() {
 				Expect(stderr).To(Equal("Uncovered lines found:\nfoo 1\n"))
 			})
 		})
-
-		// TODO: does not fail when coverage is ok
-		// TODO: fail when coverage is not ok
 	})
 
 	Describe("RunCommand", func(){
 		It("runs the given command", func() {
 			exitCode := -1
 			stdout, stderr := captureAll(func(){
-				exitCode = runCommand("echo", []string{"123"})
+				exitCode = runCommand("echo", "123")
 			})
 			Expect(exitCode).To(Equal(0))
 			Expect(stdout).To(Equal("123\n"))
@@ -179,7 +176,7 @@ var _ = Describe("go_scov", func() {
 		It("fails when command fails", func() {
 			exitCode := -1
 			stdout, stderr := captureAll(func(){
-				exitCode = runCommand("ls", []string{"--nope"})
+				exitCode = runCommand("ls", "--nope")
 			})
 			Expect(exitCode).To(Equal(1))
 			Expect(stdout).To(Equal(""))
