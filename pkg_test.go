@@ -109,6 +109,10 @@ func captureAll(fn func()) (stdout string, stderr string) {
 
 var _ = Describe("go_scov", func() {
 	Describe("CovTest", func(){
+		BeforeEach(func(){
+			os.Remove("coverage.out")
+		})
+
 		It("adds coverage to passed in arguments", func(){
 			withFakeGo("touch coverage.out\necho go \"$@\"", func(){
 				exitCode := -1
@@ -133,7 +137,30 @@ var _ = Describe("go_scov", func() {
 			})
 		})
 
-		// TODO: fails without adding noise
+		It("does not fail when coverage is ok", func(){
+			withFakeGo("echo foo 0 > coverage.out", func(){
+				exitCode := -1
+				stdout, stderr := captureAll(func(){
+					exitCode = CovTest([]string{"hello", "world"})
+				})
+				Expect(exitCode).To(Equal(0))
+				Expect(stdout).To(Equal(""))
+				Expect(stderr).To(Equal(""))
+			})
+		})
+
+		It("fail when coverage is not ok", func(){
+			withFakeGo("echo header > coverage.out; echo foo 1 >> coverage.out", func(){
+				exitCode := -1
+				stdout, stderr := captureAll(func(){
+					exitCode = CovTest([]string{"hello", "world"})
+				})
+				Expect(exitCode).To(Equal(1))
+				Expect(stdout).To(Equal(""))
+				Expect(stderr).To(Equal("Uncovered lines found:\nfoo 1\n"))
+			})
+		})
+
 		// TODO: does not fail when coverage is ok
 		// TODO: fail when coverage is not ok
 	})
@@ -168,20 +195,20 @@ var _ = Describe("go_scov", func() {
 		})
 
 		It("shows uncovered", func(){
-			withTempfile("mode: set\nfoo/pkg.go:1.2,3.4 1 0\n", func(file *os.File){
-				Expect(Uncovered(file.Name())).To(Equal([]string{"foo/pkg.go:1.2,3.4 1 0"}))
+			withTempfile("mode: set\nfoo/pkg.go:1.2,3.4 1 1\n", func(file *os.File){
+				Expect(Uncovered(file.Name())).To(Equal([]string{"foo/pkg.go:1.2,3.4 1 1"}))
 			})
 		})
 
 		It("does not show covered", func(){
-			withTempfile("mode: set\nfoo/pkg.go:1.2,3.4 1 1\n", func(file *os.File){
+			withTempfile("mode: set\nfoo/pkg.go:1.2,3.4 1 0\n", func(file *os.File){
 				Expect(Uncovered(file.Name())).To(Equal([]string{}))
 			})
 		})
 
-		It("does not show covered even if coverage ends in 0", func(){
+		It("shows uncovered even if coverage ends in 0", func(){
 			withTempfile("mode: set\nfoo/pkg.go:1.2,3.4 1 10\n", func(file *os.File){
-				Expect(Uncovered(file.Name())).To(Equal([]string{}))
+				Expect(Uncovered(file.Name())).To(Equal([]string{"foo/pkg.go:1.2,3.4 1 10"}))
 			})
 		})
 	})
