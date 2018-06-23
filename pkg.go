@@ -41,8 +41,8 @@ func collect(vs []string, f func(string) string) []string {
 // TODO move into a utils package ? ... how does coverage work then ?
 // Run a command and stream output to stdout/err, but return an exit code
 // https://stackoverflow.com/questions/10385551/get-exit-code-go
-func runCommand(name string, argv ...string) (exitCode int) {
-	cmd := exec.Command(name, argv...)
+func runCommand(name string, args ...string) (exitCode int) {
+	cmd := exec.Command(name, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -56,6 +56,7 @@ func runCommand(name string, argv ...string) (exitCode int) {
 		} else {
 			// This will happen (in OSX) if `name` is not available in $PATH,
 			// in this situation, exit code could not be get
+			fmt.Fprintf(os.Stderr, "Could not get exit code for failed program: %v, %v\n", name, args)
 			exitCode = 1
 		}
 	} else {

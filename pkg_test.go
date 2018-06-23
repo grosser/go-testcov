@@ -205,6 +205,16 @@ var _ = Describe("go_scov", func() {
 			Expect(stdout).To(Equal(""))
 			Expect(stderr).To(ContainSubstring("illegal option"))
 		})
+
+		It("returns an error when invalid executable was used", func(){
+			exitCode := -1
+			stdout, stderr := captureAll(func(){
+				exitCode = runCommand("wuuuut", "--nope")
+			})
+			Expect(exitCode).To(Equal(1))
+			Expect(stdout).To(Equal(""))
+			Expect(stderr).To(Equal("Could not get exit code for failed program: wuuuut, [--nope]\n"))
+		})
 	})
 
 	Describe("uncovered", func() {
@@ -230,6 +240,20 @@ var _ = Describe("go_scov", func() {
 			withTempfile("mode: set\nfoo/pkg.go:1.2,3.4 1 10\n", func(file *os.File){
 				Expect(uncovered(file.Name())).To(Equal([]string{}))
 			})
+		})
+	})
+
+	Describe("check", func(){
+		It("does nothing when no error occured", func(){
+			check(nil)
+		})
+
+		It("panics when an error occured", func(){
+			defer func() {
+				recovered := recover()
+				Expect(recovered).ToNot(BeNil())
+			}()
+			check(os.Remove("NOPE"))
 		})
 	})
 })
