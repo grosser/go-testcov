@@ -4,7 +4,8 @@ import (
 	"io/ioutil"
 	"strings"
 	"os/exec"
-	"fmt"
+	"syscall"
+	"os"
 )
 
 func check(e error) {
@@ -28,24 +29,46 @@ func filter(ss []string, test func(string) bool) []string {
 	return ret
 }
 
-func CovTest(argv []string) bool {
+// TODO move into a utils package ? ... how does coverage work then ?
+// Run a command and stream output to stdout/err, but return an exit code
+// https://stackoverflow.com/questions/10385551/get-exit-code-go
+const defaultFailedCode = 1
+
+func runCommand(name string, argv []string) (exitCode int) {
+	cmd := exec.Command(name, argv...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err := cmd.Run()
+
+	if err != nil {
+		// try to get the exit code
+		if exitError, ok := err.(*exec.ExitError); ok {
+			ws := exitError.Sys().(syscall.WaitStatus)
+			exitCode = ws.ExitStatus()
+		} else {
+			// This will happen (in OSX) if `name` is not available in $PATH,
+			// in this situation, exit code could not be get
+			exitCode = defaultFailedCode
+		}
+	} else {
+		// success, exitCode should be 0 if go is ok
+		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
+		exitCode = ws.ExitStatus()
+	}
+	return
+}
+
+// TODO use multi-string interface instead
+func CovTest(argv []string) (exitCode int) {
 	file := "coverage.out"
-	argv = append([]string{"go", "test"}, argv...)
+	argv = append([]string{"test"}, argv...)
 	argv = append(argv, "-cover", "-coverprofile=" + file)
-	success := RunCommand(argv)
+	exitCode = runCommand("go", argv)
 	// TODO: parse the coverage
 	// TODO: print the coverage
 	// TODO: set success to fail when there is missing coverage
-	return success
-}
-
-// run argv and return if it succeeded
-// TODO: show out and err to the user as they appear
-func RunCommand(argv []string) bool {
-	command := argv[0]
-	out, err := exec.Command(command, argv[1:]...).Output()
-	fmt.Print(string(out))
-	return err == nil
+	return
 }
 
 // Find the uncovered lines given a coverage file path

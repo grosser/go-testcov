@@ -81,35 +81,48 @@ var _ = Describe("go_scov", func() {
 	Describe("CovTest", func(){
 		It("adds coverage to passed in arguments", func(){
 			withFakeGo("touch coverage.out\necho go \"$@\"", func(){
-				success := false
+				exitCode := -1
 				output := captureStdout(func(){
-					success = CovTest([]string{"hello", "world"})
+					exitCode = CovTest([]string{"hello", "world"})
 				})
-				Expect(success).To(Equal(true))
+				Expect(exitCode).To(Equal(0))
 				Expect(output).To(Equal("go test hello world -cover -coverprofile=coverage.out\n"))
 			})
 		})
+
+		// TODO: pass on exit code not boolean
+		It("fails without adding noise", func(){
+			withFakeGo("touch coverage.out\nexit 15", func(){
+				exitCode := -1
+				output := captureStdout(func(){
+					exitCode = CovTest([]string{"hello", "world"})
+				})
+				Expect(exitCode).To(Equal(15))
+				Expect(output).To(Equal(""))
+			})
+		})
+
 		// TODO: fails without adding noise
 		// TODO: does not fail when coverage is ok
 		// TODO: fail when coverage is not ok
 	})
 
 	Describe("RunCommand", func(){
-		It("Runs the given command", func() {
-			success := false
+		It("runs the given command", func() {
+			exitCode := -1
 			output := captureStdout(func(){
-				success = RunCommand([]string{"echo", "123"})
+				exitCode = runCommand("echo", []string{"123"})
 			})
-			Expect(success).To(Equal(true))
+			Expect(exitCode).To(Equal(0))
 			Expect(output).To(Equal("123\n"))
 		})
 
-		It("returns false when command fails", func() {
-			success := true
+		It("fails when command fails", func() {
+			exitCode := -1
 			output := captureStdout(func(){
-				success = RunCommand([]string{"ls", "--nope"})
+				exitCode = runCommand("ls", []string{"--nope"})
 			})
-			Expect(success).To(Equal(false))
+			Expect(exitCode).To(Equal(1))
 			Expect(output).To(Equal(""))
 		})
 	})
