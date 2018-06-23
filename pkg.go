@@ -1,4 +1,4 @@
-package go_scov
+package main
 
 import (
 	"io/ioutil"
@@ -30,6 +30,14 @@ func filter(ss []string, test func(string) bool) (filtered []string) {
 	return
 }
 
+func collect(vs []string, f func(string) string) []string {
+	vsm := make([]string, len(vs))
+	for i, v := range vs {
+		vsm[i] = f(v)
+	}
+	return vsm
+}
+
 // TODO move into a utils package ? ... how does coverage work then ?
 // Run a command and stream output to stdout/err, but return an exit code
 // https://stackoverflow.com/questions/10385551/get-exit-code-go
@@ -58,15 +66,16 @@ func runCommand(name string, argv ...string) (exitCode int) {
 	return
 }
 
-func CovTest(argv []string) (exitCode int) {
+func covTest(argv []string) (exitCode int) {
 	path := "coverage.out"
+	os.Remove(path)
 	argv = append([]string{"test"}, argv...)
 	argv = append(argv, "-cover", "-coverprofile=" +path)
 	exitCode = runCommand("go", argv...)
 	if(exitCode == 0) {
-		uncovered := Uncovered(path)
-		if(len(uncovered) != 0) { // TODO heading and more info maybe
-			fmt.Fprintln(os.Stderr, "Uncovered lines found:")
+		uncovered := uncovered(path)
+		if(len(uncovered) != 0) {
+			fmt.Fprintln(os.Stderr, "Uncovered sections found:")
 			fmt.Fprintln(os.Stderr, strings.Join(uncovered, "\n"))
 			return 1
 		}
@@ -75,7 +84,7 @@ func CovTest(argv []string) (exitCode int) {
 }
 
 // Find the uncovered lines given a coverage file path
-func Uncovered(path string) (uncoveredLines []string) {
+func uncovered(path string) (uncoveredLines []string) {
 	data, err := ioutil.ReadFile(path)
 	check(err)
 
@@ -87,8 +96,15 @@ func Uncovered(path string) (uncoveredLines []string) {
 	// remove the initial `set: mode` line
 	lines = lines[1:]
 
-	// filter out lines that are covered (end " 0")
-	lines = filter(lines, func(line string) bool { return !strings.HasSuffix(line, " 0") })
+	// find lines that are uncovered (end in " 0")
+	lines = filter(lines, func(line string) bool { return strings.HasSuffix(line, " 0") })
+
+	// remove converage info from lines
+	lines = collect(lines, func(line string) string { return strings.Split(line, " ")[0] })
 
 	return lines
+}
+
+func main(){
+	covTest(os.Args[1:len(os.Args)])
 }
