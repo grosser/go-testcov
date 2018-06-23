@@ -48,7 +48,7 @@ func withEnv(key string, value string, fn func()) {
 
 func withFakeGo(content string, fn func()) {
 	withTempDir(func(dir string){
-		withEnv("PATH", dir, func(){
+		withEnv("PATH", dir + ":" + os.Getenv("PATH"), func(){
 			writeFile(dir + "/go", "#!/bin/sh\n" + content)
 			fn()
 		})
@@ -56,8 +56,8 @@ func withFakeGo(content string, fn func()) {
 }
 
 // https://stackoverflow.com/questions/10473800/in-go-how-do-i-capture-stdout-of-a-function-into-a-string
-func captureStdout(fn func()) string {
-	old := os.Stdout // keep backup of the real stdout
+func captureStdout(fn func()) (captured string) {
+	old := os.Stdout // keep backup of the real
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
@@ -73,8 +73,38 @@ func captureStdout(fn func()) string {
 
 	// back to normal state
 	w.Close()
-	os.Stdout = old // restoring the real stdout
-	return <-outC
+	os.Stdout = old // restoring the real
+	captured = <-outC
+	return
+}
+
+func captureStderr(fn func()) (captured string) {
+	old := os.Stderr // keep backup of the real
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+
+	fn()
+
+	outC := make(chan string)
+	// copy the output in a separate goroutine so printing can't block indefinitely
+	go func() {
+		var buf bytes.Buffer
+		io.Copy(&buf, r)
+		outC <- buf.String()
+	}()
+
+	// back to normal state
+	w.Close()
+	os.Stderr = old // restoring the real
+	captured = <-outC
+	return
+}
+
+func captureAll(fn func()) (stdout string, stderr string) {
+	stdout = captureStdout(func(){
+		stderr = captureStderr(fn)
+	})
+	return
 }
 
 var _ = Describe("go_scov", func() {
@@ -82,23 +112,24 @@ var _ = Describe("go_scov", func() {
 		It("adds coverage to passed in arguments", func(){
 			withFakeGo("touch coverage.out\necho go \"$@\"", func(){
 				exitCode := -1
-				output := captureStdout(func(){
+				stdout, stderr := captureAll(func(){
 					exitCode = CovTest([]string{"hello", "world"})
 				})
 				Expect(exitCode).To(Equal(0))
-				Expect(output).To(Equal("go test hello world -cover -coverprofile=coverage.out\n"))
+				Expect(stdout).To(Equal("go test hello world -cover -coverprofile=coverage.out\n"))
+				Expect(stderr).To(Equal(""))
 			})
 		})
 
-		// TODO: pass on exit code not boolean
 		It("fails without adding noise", func(){
 			withFakeGo("touch coverage.out\nexit 15", func(){
 				exitCode := -1
-				output := captureStdout(func(){
+				stdout, stderr := captureAll(func(){
 					exitCode = CovTest([]string{"hello", "world"})
 				})
 				Expect(exitCode).To(Equal(15))
-				Expect(output).To(Equal(""))
+				Expect(stdout).To(Equal(""))
+				Expect(stderr).To(Equal(""))
 			})
 		})
 
@@ -110,20 +141,22 @@ var _ = Describe("go_scov", func() {
 	Describe("RunCommand", func(){
 		It("runs the given command", func() {
 			exitCode := -1
-			output := captureStdout(func(){
+			stdout, stderr := captureAll(func(){
 				exitCode = runCommand("echo", []string{"123"})
 			})
 			Expect(exitCode).To(Equal(0))
-			Expect(output).To(Equal("123\n"))
+			Expect(stdout).To(Equal("123\n"))
+			Expect(stderr).To(Equal(""))
 		})
 
 		It("fails when command fails", func() {
 			exitCode := -1
-			output := captureStdout(func(){
+			stdout, stderr := captureAll(func(){
 				exitCode = runCommand("ls", []string{"--nope"})
 			})
 			Expect(exitCode).To(Equal(1))
-			Expect(output).To(Equal(""))
+			Expect(stdout).To(Equal(""))
+			Expect(stderr).To(ContainSubstring("illegal option"))
 		})
 	})
 
