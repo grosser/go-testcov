@@ -9,19 +9,22 @@ import (
 	"fmt"
 )
 
+// injection point to enable test coverage
 var exitFunction func(code int) = os.Exit
 
+// Util: blow up on errors without extra conditionals everywhere
 func check(e error) {
 	if e != nil {
 		panic(e)
 	}
 }
 
-// "" => []  "foo" => ["foo"]
+// Util: "" => []  "foo" => ["foo"]
 func splitWithoutEmpty(string string, delimiter rune) []string {
 	return strings.FieldsFunc(string, func(c rune) bool { return c == delimiter })
 }
 
+// Util: select only the items from an array that match the given function
 func filter(ss []string, test func(string) bool) (filtered []string) {
 	filtered = []string{}
 	for _, s := range ss {
@@ -32,6 +35,7 @@ func filter(ss []string, test func(string) bool) (filtered []string) {
 	return
 }
 
+// Util: map each item of an array to what a function returns
 func collect(vs []string, f func(string) string) []string {
 	vsm := make([]string, len(vs))
 	for i, v := range vs {
@@ -40,7 +44,7 @@ func collect(vs []string, f func(string) string) []string {
 	return vsm
 }
 
-// TODO move into a utils package ? ... how does coverage work then ?
+// Util:
 // Run a command and stream output to stdout/err, but return an exit code
 // https://stackoverflow.com/questions/10385551/get-exit-code-go
 func runCommand(name string, args ...string) (exitCode int) {
@@ -69,6 +73,7 @@ func runCommand(name string, args ...string) (exitCode int) {
 	return
 }
 
+// Run go test with given arguments + coverage and inspect coverage after run
 func covTest(argv []string) (exitCode int) {
 	path := "coverage.out"
 	os.Remove(path)
@@ -87,7 +92,7 @@ func covTest(argv []string) (exitCode int) {
 	return
 }
 
-// Find the uncovered lines given a coverage file path
+// Find the uncovered lines given a coverage file
 func uncovered(path string) (uncoveredLines []string) {
 	data, err := ioutil.ReadFile(path)
 	check(err)
