@@ -107,5 +107,6 @@ func uncovered(path string) (uncoveredLines []string) {
 }
 
 func main(){
-	covTest(os.Args[1:len(os.Args)])
+	argv := os.Args[1:len(os.Args)] // remove executable name
+	os.Exit(covTest(argv))
 }
