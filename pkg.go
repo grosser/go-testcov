@@ -105,7 +105,7 @@ func covTest(argv []string) (exitCode int) {
 	actualUncovered := len(uncovered)
 
 	if(configuredUncovered < actualUncovered) {
-		// TODO: color
+		// TODO: color when tty
 		fmt.Fprintf(os.Stderr, "%v uncovered sections found, but expected %v:\n", actualUncovered, configuredUncovered)
 		fmt.Fprintln(os.Stderr, strings.Join(uncovered, "\n"))
 		exitCode = 1

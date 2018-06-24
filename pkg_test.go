@@ -153,45 +153,43 @@ var _ = Describe("go-testcov", func() {
 		})
 	})
 
-	// TODO: run everything inside of a tempdir ?
-	// TODO: dry up duplicate assertions around exit/out/err
+	// TODO: use AroundEach to run everything inside of a tempdir https://github.com/onsi/ginkgo/issues/481
 	Describe("covTest", func(){
+		testCovTest := func(args []string, expected []interface{}) {
+			exitCode := -1
+			stdout, stderr := captureAll(func(){
+				exitCode = covTest(args)
+			})
+			Expect([]interface{}{exitCode, stdout, stderr}).To(Equal(expected))
+		}
+
 		It("adds coverage to passed in arguments", func(){
 			withFakeGo("touch coverage.out\necho go \"$@\"", func(){
 				writeFile("foo", "")
-				exitCode := -1
-				stdout, stderr := captureAll(func(){
-					exitCode = covTest([]string{"hello", "world"})
-				})
-				Expect(exitCode).To(Equal(0))
-				Expect(stdout).To(Equal("go test hello world -cover -coverprofile=coverage.out\n"))
-				Expect(stderr).To(Equal(""))
+				testCovTest(
+					[]string{"hello", "world"},
+					[]interface{}{0, "go test hello world -cover -coverprofile=coverage.out\n", ""},
+				)
 			})
 		})
 
 		It("fails without adding noise", func(){
 			withFakeGo("touch coverage.out\nexit 15", func(){
 				writeFile("foo", "")
-				exitCode := -1
-				stdout, stderr := captureAll(func(){
-					exitCode = covTest([]string{"hello", "world"})
-				})
-				Expect(exitCode).To(Equal(15))
-				Expect(stdout).To(Equal(""))
-				Expect(stderr).To(Equal(""))
+				testCovTest(
+					[]string{"hello", "world"},
+					[]interface{}{15, "", ""},
+				)
 			})
 		})
 
 		It("does not fail when coverage is ok", func(){
 			withFakeGo("echo header > coverage.out; echo foo 1 >> coverage.out", func(){
 				writeFile("foo", "")
-				exitCode := -1
-				stdout, stderr := captureAll(func(){
-					exitCode = covTest([]string{"hello", "world"})
-				})
-				Expect(exitCode).To(Equal(0))
-				Expect(stdout).To(Equal(""))
-				Expect(stderr).To(Equal(""))
+				testCovTest(
+					[]string{"hello", "world"},
+					[]interface{}{0, "", ""},
+				)
 			})
 		})
 
@@ -199,68 +197,50 @@ var _ = Describe("go-testcov", func() {
 			withFakeGo("touch coverage.out", func(){
 				writeFile("foo", "")
 				writeFile("coverage.out", "head\ntest 0")
-				exitCode := -1
-				stdout, stderr := captureAll(func(){
-					exitCode = covTest([]string{"hello", "world"})
-				})
-				Expect(exitCode).To(Equal(0))
-				Expect(stdout).To(Equal(""))
-				Expect(stderr).To(Equal(""))
+				testCovTest(
+					[]string{"hello", "world"},
+					[]interface{}{0, "", ""},
+				)
 			})
 		})
 
 		It("fail when coverage is not ok", func(){
 			withFakeGo("echo header > coverage.out; echo foo 0 >> coverage.out", func(){
 				writeFile("foo", "")
-				exitCode := -1
-				stdout, stderr := captureAll(func(){
-					exitCode = covTest([]string{"hello", "world"})
-				})
-				Expect(exitCode).To(Equal(1))
-				Expect(stdout).To(Equal(""))
-				Expect(stderr).To(Equal("1 uncovered sections found, but expected 0:\nfoo\n"))
+				testCovTest(
+					[]string{"hello", "world"},
+					[]interface{}{1, "", "1 uncovered sections found, but expected 0:\nfoo\n"},
+				)
 			})
 		})
 
 		It("fails when configured uncovered is below actual uncovered", func(){
 			withFakeGo("echo header > coverage.out; echo foo 0 >> coverage.out; echo foo 0 >> coverage.out", func(){
 				writeFile("foo", "// untested sections: 1")
-
-				exitCode := -1
-				stdout, stderr := captureAll(func(){
-					exitCode = covTest([]string{"hello", "world"})
-				})
-				Expect(exitCode).To(Equal(1))
-				Expect(stdout).To(Equal(""))
-				Expect(stderr).To(Equal("2 uncovered sections found, but expected 1:\nfoo\nfoo\n"))
+				testCovTest(
+					[]string{"hello", "world"},
+					[]interface{}{1, "", "2 uncovered sections found, but expected 1:\nfoo\nfoo\n"},
+				)
 			})
 		})
 
 		It("passes when configured uncovered is equal to actual uncovered", func(){
 			withFakeGo("echo header > coverage.out; echo foo 0 >> coverage.out; echo foo 0 >> coverage.out", func(){
 				writeFile("foo", "// untested sections: 2")
-
-				exitCode := -1
-				stdout, stderr := captureAll(func(){
-					exitCode = covTest([]string{"hello", "world"})
-				})
-				Expect(exitCode).To(Equal(0))
-				Expect(stdout).To(Equal(""))
-				Expect(stderr).To(Equal(""))
+				testCovTest(
+					[]string{"hello", "world"},
+					[]interface{}{0, "", ""},
+				)
 			})
 		})
 
 		It("passes when configured uncovered is above actual uncovered", func(){
 			withFakeGo("echo header > coverage.out; echo foo 0 >> coverage.out; echo foo 0 >> coverage.out", func(){
 				writeFile("foo", "// untested sections: 3")
-
-				exitCode := -1
-				stdout, stderr := captureAll(func(){
-					exitCode = covTest([]string{"hello", "world"})
-				})
-				Expect(exitCode).To(Equal(0))
-				Expect(stdout).To(Equal(""))
-				Expect(stderr).To(Equal(""))
+				testCovTest(
+					[]string{"hello", "world"},
+					[]interface{}{0, "", ""},
+				)
 			})
 		})
 	})
