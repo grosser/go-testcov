@@ -24,7 +24,7 @@ func writeFile(path string, content string) {
 	noError(err)
 }
 
-func withTempfile(content string, fn func(*os.File)) {
+func withTempFile(content string, fn func(*os.File)) {
 	file, err := ioutil.TempFile("", "go-scov")
 	noError(err)
 	defer os.Remove(file.Name())
@@ -121,7 +121,7 @@ func captureAll(fn func()) (stdout string, stderr string) {
 	return
 }
 
-var _ = Describe("go_scov", func() {
+var _ = Describe("go-testcov", func() {
 	Describe("main", func(){
 		It("exits", func(){
 			withFakeGo("touch coverage.out\necho go \"$@\"", func(){
@@ -153,9 +153,12 @@ var _ = Describe("go_scov", func() {
 		})
 	})
 
+	// TODO: run everything inside of a tempdir ?
+	// TODO: dry up duplicate assertions around exit/out/err
 	Describe("covTest", func(){
 		It("adds coverage to passed in arguments", func(){
 			withFakeGo("touch coverage.out\necho go \"$@\"", func(){
+				writeFile("foo", "")
 				exitCode := -1
 				stdout, stderr := captureAll(func(){
 					exitCode = covTest([]string{"hello", "world"})
@@ -168,6 +171,7 @@ var _ = Describe("go_scov", func() {
 
 		It("fails without adding noise", func(){
 			withFakeGo("touch coverage.out\nexit 15", func(){
+				writeFile("foo", "")
 				exitCode := -1
 				stdout, stderr := captureAll(func(){
 					exitCode = covTest([]string{"hello", "world"})
@@ -180,6 +184,7 @@ var _ = Describe("go_scov", func() {
 
 		It("does not fail when coverage is ok", func(){
 			withFakeGo("echo header > coverage.out; echo foo 1 >> coverage.out", func(){
+				writeFile("foo", "")
 				exitCode := -1
 				stdout, stderr := captureAll(func(){
 					exitCode = covTest([]string{"hello", "world"})
@@ -192,6 +197,7 @@ var _ = Describe("go_scov", func() {
 
 		It("removes existing coverage to avoid confusion", func(){
 			withFakeGo("touch coverage.out", func(){
+				writeFile("foo", "")
 				writeFile("coverage.out", "head\ntest 0")
 				exitCode := -1
 				stdout, stderr := captureAll(func(){
@@ -205,13 +211,56 @@ var _ = Describe("go_scov", func() {
 
 		It("fail when coverage is not ok", func(){
 			withFakeGo("echo header > coverage.out; echo foo 0 >> coverage.out", func(){
+				writeFile("foo", "")
 				exitCode := -1
 				stdout, stderr := captureAll(func(){
 					exitCode = covTest([]string{"hello", "world"})
 				})
 				Expect(exitCode).To(Equal(1))
 				Expect(stdout).To(Equal(""))
-				Expect(stderr).To(Equal("Uncovered sections found:\nfoo\n"))
+				Expect(stderr).To(Equal("1 uncovered sections found, but expected 0:\nfoo\n"))
+			})
+		})
+
+		It("fails when configured uncovered is below actual uncovered", func(){
+			withFakeGo("echo header > coverage.out; echo foo 0 >> coverage.out; echo foo 0 >> coverage.out", func(){
+				writeFile("foo", "// untested sections: 1")
+
+				exitCode := -1
+				stdout, stderr := captureAll(func(){
+					exitCode = covTest([]string{"hello", "world"})
+				})
+				Expect(exitCode).To(Equal(1))
+				Expect(stdout).To(Equal(""))
+				Expect(stderr).To(Equal("2 uncovered sections found, but expected 1:\nfoo\nfoo\n"))
+			})
+		})
+
+		It("passes when configured uncovered is equal to actual uncovered", func(){
+			withFakeGo("echo header > coverage.out; echo foo 0 >> coverage.out; echo foo 0 >> coverage.out", func(){
+				writeFile("foo", "// untested sections: 2")
+
+				exitCode := -1
+				stdout, stderr := captureAll(func(){
+					exitCode = covTest([]string{"hello", "world"})
+				})
+				Expect(exitCode).To(Equal(0))
+				Expect(stdout).To(Equal(""))
+				Expect(stderr).To(Equal(""))
+			})
+		})
+
+		It("passes when configured uncovered is above actual uncovered", func(){
+			withFakeGo("echo header > coverage.out; echo foo 0 >> coverage.out; echo foo 0 >> coverage.out", func(){
+				writeFile("foo", "// untested sections: 3")
+
+				exitCode := -1
+				stdout, stderr := captureAll(func(){
+					exitCode = covTest([]string{"hello", "world"})
+				})
+				Expect(exitCode).To(Equal(0))
+				Expect(stdout).To(Equal(""))
+				Expect(stderr).To(Equal(""))
 			})
 		})
 	})
@@ -250,26 +299,40 @@ var _ = Describe("go_scov", func() {
 
 	Describe("uncovered", func() {
 		It("shows nothing for empty", func() {
-			withTempfile("", func(file *os.File){
+			withTempFile("", func(file *os.File){
 				Expect(uncovered(file.Name())).To(Equal([]string{}))
 			})
 		})
 
 		It("shows uncovered", func(){
-			withTempfile("mode: set\nfoo/pkg.go:1.2,3.4 1 0\n", func(file *os.File){
+			withTempFile("mode: set\nfoo/pkg.go:1.2,3.4 1 0\n", func(file *os.File){
 				Expect(uncovered(file.Name())).To(Equal([]string{"foo/pkg.go:1.2,3.4"}))
 			})
 		})
 
 		It("does not show covered", func(){
-			withTempfile("mode: set\nfoo/pkg.go:1.2,3.4 1 1\n", func(file *os.File){
+			withTempFile("mode: set\nfoo/pkg.go:1.2,3.4 1 1\n", func(file *os.File){
 				Expect(uncovered(file.Name())).To(Equal([]string{}))
 			})
 		})
 
 		It("does not show covered even if coverage ends in 0", func(){
-			withTempfile("mode: set\nfoo/pkg.go:1.2,3.4 1 10\n", func(file *os.File){
+			withTempFile("mode: set\nfoo/pkg.go:1.2,3.4 1 10\n", func(file *os.File){
 				Expect(uncovered(file.Name())).To(Equal([]string{}))
+			})
+		})
+	})
+
+	Describe("expectedUncovered", func(){
+		It("returns 0 when not configured", func(){
+			withTempFile("", func(file *os.File){
+				Expect(expectedUncovered(file.Name())).To(Equal(0))
+			})
+		})
+
+		It("returns number when configured", func(){
+			withTempFile("// untested sections: 12", func(file *os.File){
+				Expect(expectedUncovered(file.Name())).To(Equal(12))
 			})
 		})
 	})

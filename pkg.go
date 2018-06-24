@@ -7,6 +7,8 @@ import (
 	"syscall"
 	"os"
 	"fmt"
+	"regexp"
+	"strconv"
 )
 
 // injection point to enable test coverage
@@ -73,32 +75,50 @@ func runCommand(name string, args ...string) (exitCode int) {
 	return
 }
 
+// Util: read a file into a string
+func readFile(path string) (content string) {
+	data, err := ioutil.ReadFile(path)
+	check(err)
+	return string(data)
+}
+
 // Run go test with given arguments + coverage and inspect coverage after run
 func covTest(argv []string) (exitCode int) {
-	path := "coverage.out"
-	os.Remove(path)
+	coveragePath := "coverage.out"
+	os.Remove(coveragePath)
 	argv = append([]string{"test"}, argv...)
-	argv = append(argv, "-cover", "-coverprofile=" +path)
+	argv = append(argv, "-cover", "-coverprofile=" +coveragePath)
 	exitCode = runCommand("go", argv...)
-	if(exitCode == 0) {
-		uncovered := uncovered(path)
-		if(len(uncovered) != 0) {
-			// TODO: color
-			fmt.Fprintln(os.Stderr, "Uncovered sections found:")
-			fmt.Fprintln(os.Stderr, strings.Join(uncovered, "\n"))
-			return 1
-		}
+	if(exitCode != 0) {
+		return
+	}
+
+	// Tests passed, so let's check coverage
+	uncovered := uncovered(coveragePath)
+	if(len(uncovered) == 0) {
+		return // NOTE: Ideally warn when coverage is below configured, but then we don't know what file was covered
+	}
+
+	// TODO: support multiple files
+	fileUnderTest := strings.Split(uncovered[0], ":")[0]
+	configuredUncovered := expectedUncovered(fileUnderTest)
+	actualUncovered := len(uncovered)
+
+	if(configuredUncovered < actualUncovered) {
+		// TODO: color
+		fmt.Fprintf(os.Stderr, "%v uncovered sections found, but expected %v:\n", actualUncovered, configuredUncovered)
+		fmt.Fprintln(os.Stderr, strings.Join(uncovered, "\n"))
+		exitCode = 1
 	}
 	return
 }
 
 // Find the uncovered lines given a coverage file
 func uncovered(path string) (uncoveredLines []string) {
-	data, err := ioutil.ReadFile(path)
-	check(err)
+	content := readFile(path)
 
-	lines := splitWithoutEmpty(string(data), '\n')
-	if(len(lines) == 0) {
+	lines := splitWithoutEmpty(content, '\n')
+	if (len(lines) == 0) {
 		return []string{}
 	}
 
@@ -112,6 +132,20 @@ func uncovered(path string) (uncoveredLines []string) {
 	lines = collect(lines, func(line string) string { return strings.Split(line, " ")[0] })
 
 	return lines
+}
+
+// How many sections are expected to be uncovered, 0 if not configured
+func expectedUncovered(path string) (count int) {
+	content := readFile(path)
+	regex := regexp.MustCompile("// *untested sections: *([0-9]+)")
+	match := regex.FindStringSubmatch(content)
+	if(len(match) == 2) {
+		coverted, err := strconv.Atoi(match[1])
+		check(err)
+		return coverted
+	} else {
+		return 0
+	}
 }
 
 func main(){

@@ -1,9 +1,11 @@
 # go-testcov [![Build Status](https://travis-ci.com/grosser/go-testcov.png)](https://travis-ci.com/grosser/go-testcov) ![Coverage](https://img.shields.io/badge/Coverage-100%25-green.svg)
 
-Run `go test` but fails when there are any uncovered lines.
+`go test` that fails on uncovered lines and shows them
 
- - Get actionable feedback on every successful test run
- - No more PRs with bad test coverage
+ - 🎉 Instant, actionable feedback on 💚 test run
+ - 🎉 Onboard legacy code with `// untested sections: 5` comment
+ - 🚫 PRs with bad test coverage
+ - 🚫 External/paid coverage tools
 
 ```
 go get github.com/grosser/go-testcov
