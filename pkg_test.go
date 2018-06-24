@@ -227,14 +227,14 @@ var _ = Describe("go_scov", func() {
 			Expect(stderr).To(Equal(""))
 		})
 
-		It("fails when command fails", func() {
+		It("passes on exit code when command fails", func() {
 			exitCode := -1
 			stdout, stderr := captureAll(func(){
-				exitCode = runCommand("ls", "--nope")
+				exitCode = runCommand("sh", "-c", "exit 35")
 			})
-			Expect(exitCode).To(Equal(1))
+			Expect(exitCode).To(Equal(35))
 			Expect(stdout).To(Equal(""))
-			Expect(stderr).To(ContainSubstring("illegal option"))
+			Expect(stderr).To(Equal(""))
 		})
 
 		It("returns an error when invalid executable was used", func(){

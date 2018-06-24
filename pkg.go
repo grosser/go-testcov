@@ -78,6 +78,7 @@ func covTest(argv []string) (exitCode int) {
 	if(exitCode == 0) {
 		uncovered := uncovered(path)
 		if(len(uncovered) != 0) {
+			// TODO: color
 			fmt.Fprintln(os.Stderr, "Uncovered sections found:")
 			fmt.Fprintln(os.Stderr, strings.Join(uncovered, "\n"))
 			return 1
