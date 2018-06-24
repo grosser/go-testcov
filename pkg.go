@@ -9,6 +9,8 @@ import (
 	"fmt"
 )
 
+var exitFunction func(code int) = os.Exit
+
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -108,5 +110,5 @@ func uncovered(path string) (uncoveredLines []string) {
 
 func main(){
 	argv := os.Args[1:len(os.Args)] // remove executable name
-	os.Exit(covTest(argv))
+	exitFunction(covTest(argv))
 }

@@ -122,6 +122,37 @@ func captureAll(fn func()) (stdout string, stderr string) {
 }
 
 var _ = Describe("go_scov", func() {
+	Describe("main", func(){
+		It("exits", func(){
+			withFakeGo("touch coverage.out\necho go \"$@\"", func(){
+				exitCode := -1
+
+				// fake the exit function so we can test it
+				exitFunction = func(got int) {
+					exitCode = got
+				}
+				defer func(){
+					exitFunction = os.Exit
+				}()
+
+				// fake Args so we get a useful output
+				old := os.Args
+				os.Args = []string{"executable-name", "some", "arg"}
+				defer func(){
+					os.Args = old
+				}()
+
+				stdout, stderr := captureAll(func() {
+					main()
+				})
+
+				Expect(exitCode).To(Equal(0))
+				Expect(stdout).To(Equal("go test some arg -cover -coverprofile=coverage.out\n"))
+				Expect(stderr).To(Equal(""))
+			})
+		})
+	})
+
 	Describe("covTest", func(){
 		It("adds coverage to passed in arguments", func(){
 			withFakeGo("touch coverage.out\necho go \"$@\"", func(){
