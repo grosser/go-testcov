@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"sort"
 )
 
 // injection point to enable test coverage
@@ -82,6 +83,20 @@ func readFile(path string) (content string) {
 	return string(data)
 }
 
+// Util: iterate a map in sorted way
+func iterateSorted(data map[string][]string, fn func(string, []string)){
+	keys := make([]string, len(data))
+	i := 0
+	for k := range data {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		fn(k, data[k])
+	}
+}
+
 // Run go test with given arguments + coverage and inspect coverage after run
 func covTest(argv []string) (exitCode int) {
 	// Run go test
@@ -94,7 +109,7 @@ func covTest(argv []string) (exitCode int) {
 	// Tests passed, so let's check coverage for each file that has coverage
 	uncoveredSections := uncoveredSections(coveragePath)
 	pathSections := groupUncoveredSectionsByPath(uncoveredSections)
-	for path, sections := range pathSections {
+	iterateSorted(pathSections, func(path string, sections []string){
 		configured := configuredUncovered(path)
 		current := len(sections)
 		if (current > configured) {
@@ -103,11 +118,14 @@ func covTest(argv []string) (exitCode int) {
 			fmt.Fprintln(os.Stderr, strings.Join(sections, "\n"))
 			exitCode = 1
 		}
-	}
+	})
 
 	return
 }
 
+// NOTE: more efficient to return a nested+sorted array, could also keep track of current path and switch keys
+// when the path changes since I'd expect go to dump coverage sorted by path
+// but be careful not to sort sections since that would sort foo:10 before foo:2
 func groupUncoveredSectionsByPath(sections []string) (grouped map[string][]string) {
 	grouped = map[string][]string{}
 	for _, section := range sections {

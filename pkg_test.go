@@ -231,7 +231,18 @@ var _ = Describe("go-testcov", func() {
 				writeFile("bar", "")
 				testCovTest(
 					[]string{"hello", "world"},
-					[]interface{}{1, "", "foo new uncovered sections introduced (2 current vs 1 configured)\nfoo:1\nfoo:2\nbar new uncovered sections introduced (1 current vs 0 configured)\nbar:1\n"},
+					[]interface{}{1, "", "bar new uncovered sections introduced (1 current vs 0 configured)\nbar:1\nfoo new uncovered sections introduced (2 current vs 1 configured)\nfoo:1\nfoo:2\n"},
+				)
+			})
+		})
+
+		It("keeps sections in their natural order", func(){
+			withFakeGo("echo header > coverage.out; echo foo:2 0 >> coverage.out; echo foo:10 0 >> coverage.out", func(){
+				writeFile("foo", "// untested sections: 1")
+				writeFile("bar", "")
+				testCovTest(
+					[]string{"hello", "world"},
+					[]interface{}{1, "", "foo new uncovered sections introduced (2 current vs 1 configured)\nfoo:2\nfoo:10\n"},
 				)
 			})
 		})
