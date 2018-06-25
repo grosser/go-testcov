@@ -1,15 +1,15 @@
 package main
 
 import (
-	"io/ioutil"
-	"strings"
-	"os/exec"
-	"syscall"
-	"os"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
 	"regexp"
-	"strconv"
 	"sort"
+	"strconv"
+	"strings"
+	"syscall"
 )
 
 // injection point to enable test coverage
@@ -84,7 +84,7 @@ func readFile(path string) (content string) {
 }
 
 // Util: iterate a map in sorted way
-func iterateSorted(data map[string][]string, fn func(string, []string)){
+func iterateSorted(data map[string][]string, fn func(string, []string)) {
 	keys := make([]string, len(data))
 	i := 0
 	for k := range data {
@@ -102,17 +102,17 @@ func covTest(argv []string) (exitCode int) {
 	// Run go test
 	coveragePath := "coverage.out"
 	exitCode = runGoTestWithCoverage(argv, coveragePath)
-	if (exitCode != 0) {
+	if exitCode != 0 {
 		return
 	}
 
 	// Tests passed, so let's check coverage for each file that has coverage
 	uncoveredSections := uncoveredSections(coveragePath)
 	pathSections := groupUncoveredSectionsByPath(uncoveredSections)
-	iterateSorted(pathSections, func(path string, sections []string){
+	iterateSorted(pathSections, func(path string, sections []string) {
 		configured := configuredUncovered(path)
 		current := len(sections)
-		if (current > configured) {
+		if current > configured {
 			// TODO: color when tty
 			fmt.Fprintf(os.Stderr, "%v new uncovered sections introduced (%v current vs %v configured)\n", path, current, configured)
 			fmt.Fprintln(os.Stderr, strings.Join(sections, "\n"))
@@ -131,7 +131,7 @@ func groupUncoveredSectionsByPath(sections []string) (grouped map[string][]strin
 	for _, section := range sections {
 		path := strings.Split(section, ":")[0]
 		group, ok := grouped[path]
-		if(!ok) {
+		if !ok {
 			grouped[path] = []string{}
 		}
 		grouped[path] = append(group, section)
@@ -151,7 +151,7 @@ func uncoveredSections(path string) (sections []string) {
 	content := readFile(path)
 
 	sections = splitWithoutEmpty(content, '\n')
-	if (len(sections) == 0) {
+	if len(sections) == 0 {
 		return []string{}
 	}
 
@@ -172,7 +172,7 @@ func configuredUncovered(path string) (count int) {
 	content := readFile(path)
 	regex := regexp.MustCompile("// *untested sections: *([0-9]+)")
 	match := regex.FindStringSubmatch(content)
-	if(len(match) == 2) {
+	if len(match) == 2 {
 		coverted, err := strconv.Atoi(match[1])
 		check(err)
 		return coverted
@@ -181,7 +181,7 @@ func configuredUncovered(path string) (count int) {
 	}
 }
 
-func main(){
+func main() {
 	argv := os.Args[1:len(os.Args)] // remove executable name
 	exitFunction(covTest(argv))
 }
