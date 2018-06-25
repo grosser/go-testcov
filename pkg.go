@@ -84,58 +84,73 @@ func readFile(path string) (content string) {
 
 // Run go test with given arguments + coverage and inspect coverage after run
 func covTest(argv []string) (exitCode int) {
+	// Run go test
 	coveragePath := "coverage.out"
-	os.Remove(coveragePath)
-	argv = append([]string{"test"}, argv...)
-	argv = append(argv, "-cover", "-coverprofile=" +coveragePath)
-	exitCode = runCommand("go", argv...)
-	if(exitCode != 0) {
+	exitCode = runGoTestWithCoverage(argv, coveragePath)
+	if (exitCode != 0) {
 		return
 	}
 
-	// Tests passed, so let's check coverage
-	uncovered := uncovered(coveragePath)
-	if(len(uncovered) == 0) {
-		return // NOTE: Ideally warn when coverage is below configured, but then we don't know what file was covered
+	// Tests passed, so let's check coverage for each file that has coverage
+	uncoveredSections := uncoveredSections(coveragePath)
+	pathSections := groupUncoveredSectionsByPath(uncoveredSections)
+	for path, sections := range pathSections {
+		configured := configuredUncovered(path)
+		current := len(sections)
+		if (current > configured) {
+			// TODO: color when tty
+			fmt.Fprintf(os.Stderr, "%v new uncovered sections introduced (%v current vs %v configured)\n", path, current, configured)
+			fmt.Fprintln(os.Stderr, strings.Join(sections, "\n"))
+			exitCode = 1
+		}
 	}
 
-	// TODO: support multiple files
-	fileUnderTest := strings.Split(uncovered[0], ":")[0]
-	configuredUncovered := expectedUncovered(fileUnderTest)
-	actualUncovered := len(uncovered)
+	return
+}
 
-	if(configuredUncovered < actualUncovered) {
-		// TODO: color when tty
-		fmt.Fprintf(os.Stderr, "%v uncovered sections found, but expected %v:\n", actualUncovered, configuredUncovered)
-		fmt.Fprintln(os.Stderr, strings.Join(uncovered, "\n"))
-		exitCode = 1
+func groupUncoveredSectionsByPath(sections []string) (grouped map[string][]string) {
+	grouped = map[string][]string{}
+	for _, section := range sections {
+		path := strings.Split(section, ":")[0]
+		group, ok := grouped[path]
+		if(!ok) {
+			grouped[path] = []string{}
+		}
+		grouped[path] = append(group, section)
 	}
 	return
 }
 
-// Find the uncovered lines given a coverage file
-func uncovered(path string) (uncoveredLines []string) {
+func runGoTestWithCoverage(argv []string, coveragePath string) (exitCode int) {
+	os.Remove(coveragePath)
+	argv = append([]string{"test"}, argv...)
+	argv = append(argv, "-cover", "-coverprofile="+coveragePath)
+	return runCommand("go", argv...)
+}
+
+// Find the uncovered sections (file:line.char,line.char) given a coverage file
+func uncoveredSections(path string) (sections []string) {
 	content := readFile(path)
 
-	lines := splitWithoutEmpty(content, '\n')
-	if (len(lines) == 0) {
+	sections = splitWithoutEmpty(content, '\n')
+	if (len(sections) == 0) {
 		return []string{}
 	}
 
 	// remove the initial `set: mode` line
-	lines = lines[1:]
+	sections = sections[1:]
 
-	// find lines that are uncovered (end in " 0")
-	lines = filter(lines, func(line string) bool { return strings.HasSuffix(line, " 0") })
+	// find sections that are uncovered (end in " 0")
+	sections = filter(sections, func(line string) bool { return strings.HasSuffix(line, " 0") })
 
-	// remove converage info from lines
-	lines = collect(lines, func(line string) string { return strings.Split(line, " ")[0] })
+	// remove coverage counters from sections
+	sections = collect(sections, func(section string) string { return strings.Split(section, " ")[0] })
 
-	return lines
+	return
 }
 
 // How many sections are expected to be uncovered, 0 if not configured
-func expectedUncovered(path string) (count int) {
+func configuredUncovered(path string) (count int) {
 	content := readFile(path)
 	regex := regexp.MustCompile("// *untested sections: *([0-9]+)")
 	match := regex.FindStringSubmatch(content)

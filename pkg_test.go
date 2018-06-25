@@ -155,6 +155,7 @@ var _ = Describe("go-testcov", func() {
 
 	// TODO: use AroundEach to run everything inside of a tempdir https://github.com/onsi/ginkgo/issues/481
 	Describe("covTest", func(){
+		// TODO: ideally don't show this as the backtrace when test fails https://github.com/onsi/ginkgo/issues/491
 		testCovTest := func(args []string, expected []interface{}) {
 			exitCode := -1
 			stdout, stderr := captureAll(func(){
@@ -209,7 +210,7 @@ var _ = Describe("go-testcov", func() {
 				writeFile("foo", "")
 				testCovTest(
 					[]string{"hello", "world"},
-					[]interface{}{1, "", "1 uncovered sections found, but expected 0:\nfoo\n"},
+					[]interface{}{1, "", "foo new uncovered sections introduced (1 current vs 0 configured)\nfoo\n"},
 				)
 			})
 		})
@@ -219,7 +220,18 @@ var _ = Describe("go-testcov", func() {
 				writeFile("foo", "// untested sections: 1")
 				testCovTest(
 					[]string{"hello", "world"},
-					[]interface{}{1, "", "2 uncovered sections found, but expected 1:\nfoo\nfoo\n"},
+					[]interface{}{1, "", "foo new uncovered sections introduced (2 current vs 1 configured)\nfoo\nfoo\n"},
+				)
+			})
+		})
+
+		It("can show uncovered for multiple files", func(){
+			withFakeGo("echo header > coverage.out; echo foo:1 0 >> coverage.out; echo foo:2 0 >> coverage.out; echo bar:1 0 >> coverage.out", func(){
+				writeFile("foo", "// untested sections: 1")
+				writeFile("bar", "")
+				testCovTest(
+					[]string{"hello", "world"},
+					[]interface{}{1, "", "foo new uncovered sections introduced (2 current vs 1 configured)\nfoo:1\nfoo:2\nbar new uncovered sections introduced (1 current vs 0 configured)\nbar:1\n"},
 				)
 			})
 		})
@@ -277,42 +289,42 @@ var _ = Describe("go-testcov", func() {
 		})
 	})
 
-	Describe("uncovered", func() {
+	Describe("uncoveredSections", func() {
 		It("shows nothing for empty", func() {
 			withTempFile("", func(file *os.File){
-				Expect(uncovered(file.Name())).To(Equal([]string{}))
+				Expect(uncoveredSections(file.Name())).To(Equal([]string{}))
 			})
 		})
 
 		It("shows uncovered", func(){
 			withTempFile("mode: set\nfoo/pkg.go:1.2,3.4 1 0\n", func(file *os.File){
-				Expect(uncovered(file.Name())).To(Equal([]string{"foo/pkg.go:1.2,3.4"}))
+				Expect(uncoveredSections(file.Name())).To(Equal([]string{"foo/pkg.go:1.2,3.4"}))
 			})
 		})
 
 		It("does not show covered", func(){
 			withTempFile("mode: set\nfoo/pkg.go:1.2,3.4 1 1\n", func(file *os.File){
-				Expect(uncovered(file.Name())).To(Equal([]string{}))
+				Expect(uncoveredSections(file.Name())).To(Equal([]string{}))
 			})
 		})
 
 		It("does not show covered even if coverage ends in 0", func(){
 			withTempFile("mode: set\nfoo/pkg.go:1.2,3.4 1 10\n", func(file *os.File){
-				Expect(uncovered(file.Name())).To(Equal([]string{}))
+				Expect(uncoveredSections(file.Name())).To(Equal([]string{}))
 			})
 		})
 	})
 
-	Describe("expectedUncovered", func(){
+	Describe("configuredUncovered", func(){
 		It("returns 0 when not configured", func(){
 			withTempFile("", func(file *os.File){
-				Expect(expectedUncovered(file.Name())).To(Equal(0))
+				Expect(configuredUncovered(file.Name())).To(Equal(0))
 			})
 		})
 
 		It("returns number when configured", func(){
 			withTempFile("// untested sections: 12", func(file *os.File){
-				Expect(expectedUncovered(file.Name())).To(Equal(12))
+				Expect(configuredUncovered(file.Name())).To(Equal(12))
 			})
 		})
 	})
