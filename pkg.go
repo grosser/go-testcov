@@ -147,8 +147,8 @@ func runGoTestWithCoverage(argv []string, coveragePath string) (exitCode int) {
 }
 
 // Find the uncovered sections (file:line.char,line.char) given a coverage file
-func uncoveredSections(path string) (sections []string) {
-	content := readFile(path)
+func uncoveredSections(coverageFilePath string) (sections []string) {
+	content := readFile(coverageFilePath)
 
 	sections = splitWithoutEmpty(content, '\n')
 	if len(sections) == 0 {
@@ -163,6 +163,26 @@ func uncoveredSections(path string) (sections []string) {
 
 	// remove coverage counters from sections
 	sections = collect(sections, func(section string) string { return strings.Split(section, " ")[0] })
+
+	// remove package prefix like "github.com/user/lib" from filename if that is the current directory
+	wd, err := os.Getwd()
+	check(err)
+	prefixSize := 3 // github.com/foo/bar
+	sections = collect(sections, func(section string) string {
+		separator := string(os.PathSeparator)
+		parts := strings.Split(section, separator)
+		if len(parts) <= prefixSize {
+			return section
+		}
+
+		prefix := strings.Join(parts[:prefixSize], separator)
+		if strings.HasSuffix(wd, prefix) {
+			return strings.Split(section, prefix+separator)[1]
+		}
+
+		return section
+
+	})
 
 	return
 }

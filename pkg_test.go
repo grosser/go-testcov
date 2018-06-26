@@ -324,6 +324,18 @@ var _ = Describe("go-testcov", func() {
 				Expect(uncoveredSections(file.Name())).To(Equal([]string{}))
 			})
 		})
+
+		It("removes cwd", func() {
+			withTempFile("mode: set\ngithub.com/grosser/go-testcov/pkg.go:1.2,3.4 1 0\n", func(file *os.File) {
+				Expect(uncoveredSections(file.Name())).To(Equal([]string{"pkg.go:1.2,3.4"}))
+			})
+		})
+
+		It("does not remove non-cwd which would break file reading", func() {
+			withTempFile("mode: set\ngithub.com/nope/nope/pkg.go:1.2,3.4 1 0\n", func(file *os.File) {
+				Expect(uncoveredSections(file.Name())).To(Equal([]string{"github.com/nope/nope/pkg.go:1.2,3.4"}))
+			})
+		})
 	})
 
 	Describe("configuredUncovered", func() {

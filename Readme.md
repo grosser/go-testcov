@@ -13,8 +13,9 @@ go-testcov
 ...
 test output
 ...
-Uncovered sections found:
-github.com/foo/bar/pkg.go:111.12,114.2
+pkg.go new uncovered sections introduced (1 current vs 0 configured)
+pkg.go:20.14,21.11
+pkg.go:54.5,56.5
 ```
 
 Author
