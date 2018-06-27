@@ -155,13 +155,12 @@ var _ = Describe("go-testcov", func() {
 
 	// TODO: use AroundEach to run everything inside of a tempdir https://github.com/onsi/ginkgo/issues/481
 	Describe("covTest", func() {
-		// TODO: ideally don't show this as the backtrace when test fails https://github.com/onsi/ginkgo/issues/491
 		testCovTest := func(args []string, expected []interface{}) {
 			exitCode := -1
 			stdout, stderr := captureAll(func() {
 				exitCode = covTest(args)
 			})
-			Expect([]interface{}{exitCode, stdout, stderr}).To(Equal(expected))
+			ExpectWithOffset(1, []interface{}{exitCode, stdout, stderr}).To(Equal(expected))
 		}
 
 		It("adds coverage to passed in arguments", func() {
