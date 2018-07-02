@@ -8,4 +8,4 @@ before_install:
 script:
  - go test -race -cover -covermode=atomic
  - go install && go-testcov
- - [ -z `go fmt` ]
+ - '[ -z `go fmt` ]'
