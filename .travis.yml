@@ -2,6 +2,9 @@ language: go
 sudo: false
 branch:
   only: master
+before_install:
+ - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+ - dep ensure
 script:
  - go test -race -cover -covermode=atomic
  - go install && go-testcov
