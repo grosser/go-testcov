@@ -9,4 +9,4 @@ script:
  - go test -race -cover -covermode=atomic
  - go install && go-testcov
  - go vet
- - '[ -z `go fmt` ]'
+ - '[ -z "`go fmt`" ]'
