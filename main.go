@@ -20,16 +20,18 @@ var exitFunction func(code int) = os.Exit
 func goTestCheckCoverage(argv []string) (exitCode int) {
 	// Run go test
 	coveragePath := "coverage.out"
+	os.Remove(coveragePath)
+	defer os.Remove(coveragePath)
+
 	exitCode = runGoTestWithCoverage(argv, coveragePath)
-	if exitCode != 0 {
-		return
+	if exitCode == 0 {
+		exitCode = checkCoverage(coveragePath)
 	}
-	exitCode = checkCoverage(coveragePath)
+
 	return
 }
 
 func runGoTestWithCoverage(argv []string, coveragePath string) (exitCode int) {
-	os.Remove(coveragePath)
 	argv = append([]string{"test"}, argv...)
 	argv = append(argv, "-cover", "-coverprofile="+coveragePath)
 	return runCommand("go", argv...)

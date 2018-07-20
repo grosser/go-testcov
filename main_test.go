@@ -139,6 +139,17 @@ var _ = Describe("go-testcov", func() {
 				)
 			})
 		})
+
+		It("cleans up coverage.out", func() {
+			withFakeGo("touch coverage.out\necho 1", func() {
+				expectCommand(
+					runGoTestWithCoverage,
+					[]interface{}{0, "1\n", ""},
+				)
+				_, err := os.Stat("coverage.out")
+				Expect(err).ToNot(BeNil())
+			})
+		})
 	})
 
 	Describe("uncoveredSections", func() {
