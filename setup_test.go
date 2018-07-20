@@ -15,17 +15,20 @@ func TestAwesome(t *testing.T) {
 	RunSpecs(t, "Example")
 }
 
+// using an expectation would hide the backtrace if it goes wrong
 func noError(err error) {
-	Expect(err).To(BeNil())
+	if err != nil {
+		panic(err)
+	}
 }
 
 func writeFile(path string, content string) {
-	err := ioutil.WriteFile(path, []byte(content), 0755)
+	err := ioutil.WriteFile(path, []byte(content), 0700)
 	noError(err)
 }
 
 func withTempFile(content string, fn func(*os.File)) {
-	file, err := ioutil.TempFile("", "go-scov")
+	file, err := ioutil.TempFile("", "go-testcov")
 	noError(err)
 	defer os.Remove(file.Name())
 	writeFile(file.Name(), content)
@@ -33,10 +36,20 @@ func withTempFile(content string, fn func(*os.File)) {
 }
 
 func withTempDir(fn func(string)) {
-	dir, err := ioutil.TempDir("", "go-scov")
+	dir, err := ioutil.TempDir("", "go-testcov")
 	noError(err)
 	defer os.RemoveAll(dir)
 	fn(dir)
+}
+
+func withFakeGoPath(fn func(goPath string)) {
+	withTempDir(func(dir string) {
+		err := os.Mkdir(joinPath(dir, "src"), 0700)
+		noError(err)
+		withEnv("GOPATH", dir, func() {
+			fn(dir)
+		})
+	})
 }
 
 func withEnv(key string, value string, fn func()) {
@@ -60,7 +73,7 @@ func chDir(dir string, fn func()) {
 
 func withFakeGo(content string, fn func()) {
 	withTempDir(func(dir string) {
-		chDir(dir, func() { // need to run somewhere else so we can run scov on itself
+		chDir(dir, func() { // need to run somewhere else so we can run go-testcov on itself
 			withEnv("PATH", dir+":"+os.Getenv("PATH"), func() {
 				writeFile(dir+"/go", "#!/bin/sh\n"+content)
 				fn()

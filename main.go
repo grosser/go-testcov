@@ -45,9 +45,17 @@ func checkCoverage(coveragePath string) (exitCode int) {
 		configured := configuredUncovered(path)
 		current := len(sections)
 		if current > configured {
+			// remove package prefix like "github.com/user/lib", but cache the call to os.Getwd
+			wd, err := os.Getwd()
+			check(err)
+
 			// TODO: color when tty
+			path = removeLocalPackageFromPath(path, wd)
 			fmt.Fprintf(os.Stderr, "%v new uncovered sections introduced (%v current vs %v configured)\n", path, current, configured)
+
+			sections = collect(sections, func(section string) string { return removeLocalPackageFromPath(section, wd) })
 			fmt.Fprintln(os.Stderr, strings.Join(sections, "\n"))
+
 			exitCode = 1
 		}
 	})
@@ -85,11 +93,6 @@ func uncoveredSections(coverageFilePath string) (sections []string) {
 	// remove coverage counters from sections
 	sections = collect(sections, func(section string) string { return strings.Split(section, " ")[0] })
 
-	// remove package prefix like "github.com/user/lib"
-	wd, err := os.Getwd()
-	check(err)
-	sections = collect(sections, func(section string) string { return removeLocalPackageFromPath(section, wd) })
-
 	return
 }
 
@@ -112,7 +115,7 @@ func removeLocalPackageFromPath(path string, workingDirectory string) string {
 
 // How many sections are expected to be uncovered, 0 if not configured
 func configuredUncovered(path string) (count int) {
-	content := readFile(path)
+	content := readFile(joinPath(os.Getenv("GOPATH"), "src", path))
 	regex := regexp.MustCompile("// *untested sections: *([0-9]+)")
 	match := regex.FindStringSubmatch(content)
 	if len(match) == 2 {

@@ -91,3 +91,7 @@ func iterateSorted(data map[string][]string, fn func(string, []string)) {
 		fn(k, data[k])
 	}
 }
+
+func joinPath(parts ...string) string {
+	return strings.Join(parts, string(os.PathSeparator))
+}
