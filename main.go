@@ -33,7 +33,7 @@ func goTestCheckCoverage(argv []string) (exitCode int) {
 
 func runGoTestWithCoverage(argv []string, coveragePath string) (exitCode int) {
 	argv = append([]string{"test"}, argv...)
-	argv = append(argv, "-cover", "-coverprofile="+coveragePath)
+	argv = append(argv, "-coverprofile", coveragePath)
 	return runCommand("go", argv...)
 }
 

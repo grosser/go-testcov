@@ -18,6 +18,14 @@ pkg.go:20.14,21.11
 pkg.go:54.5,56.5
 ```
 
+
+## Notes
+
+ - Details on how coverage in go works https://blog.golang.org/cover and it's limitations
+ - Runtime overhead is about 3%
+ - Use `-covermode atomic` when testing parallel algorithms
+
+
 Author
 ======
 [Michael Grosser](http://grosser.it)<br/>

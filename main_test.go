@@ -26,7 +26,7 @@ var _ = Describe("go-testcov", func() {
 							main()
 							return exitCode
 						},
-						[]interface{}{0, "go test some arg -cover -coverprofile=coverage.out\n", ""},
+						[]interface{}{0, "go test some arg -coverprofile coverage.out\n", ""},
 					)
 				})
 			})
@@ -52,7 +52,7 @@ var _ = Describe("go-testcov", func() {
 				writeFile("foo", "")
 				expectCommand(
 					runGoTestWithCoverage,
-					[]interface{}{0, "go test hello world -cover -coverprofile=coverage.out\n", ""},
+					[]interface{}{0, "go test hello world -coverprofile coverage.out\n", ""},
 				)
 			})
 		})
