@@ -11,39 +11,18 @@ import (
 	"syscall"
 )
 
-// Util: blow up on errors without extra conditionals everywhere
+// blow up on errors without extra conditionals everywhere
 func check(e error) {
 	if e != nil {
 		panic(e)
 	}
 }
 
-// Util: "" => []  "foo" => ["foo"]
+// "" => []  "foo" => ["foo"]
 func splitWithoutEmpty(string string, delimiter rune) []string {
 	return strings.FieldsFunc(string, func(c rune) bool { return c == delimiter })
 }
 
-// Util: select only the items from an array that match the given function
-func filter(ss []string, test func(string) bool) (filtered []string) {
-	filtered = []string{}
-	for _, s := range ss {
-		if test(s) {
-			filtered = append(filtered, s)
-		}
-	}
-	return
-}
-
-// Util: map each item of an array to what a function returns
-func collect(vs []string, f func(string) string) []string {
-	vsm := make([]string, len(vs))
-	for i, v := range vs {
-		vsm[i] = f(v)
-	}
-	return vsm
-}
-
-// Util:
 // Run a command and stream output to stdout/err, but return an exit code
 // https://stackoverflow.com/questions/10385551/get-exit-code-go
 func runCommand(name string, args ...string) (exitCode int) {
@@ -72,15 +51,15 @@ func runCommand(name string, args ...string) (exitCode int) {
 	return
 }
 
-// Util: read a file into a string
+// read a file into a string
 func readFile(path string) (content string) {
 	data, err := ioutil.ReadFile(path)
 	check(err)
 	return string(data)
 }
 
-// Util: iterate a map in sorted way
-func iterateSorted(data map[string][]string, fn func(string, []string)) {
+// iterate a map by going through it via by it's sorted keys
+func iterateSorted(data map[string][]Section, fn func(string, []Section)) {
 	keys := make([]string, len(data))
 	i := 0
 	for k := range data {

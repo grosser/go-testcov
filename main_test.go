@@ -201,25 +201,25 @@ var _ = Describe("go-testcov", func() {
 	Describe("uncoveredSections", func() {
 		It("shows nothing for empty", func() {
 			withTempFile("", func(file *os.File) {
-				Expect(uncoveredSections(file.Name())).To(Equal([]string{}))
+				Expect(uncoveredSections(file.Name())).To(Equal([]Section{}))
 			})
 		})
 
 		It("shows uncovered", func() {
 			withTempFile("mode: set\nfoo/pkg.go:1.2,3.4 1 0\n", func(file *os.File) {
-				Expect(uncoveredSections(file.Name())).To(Equal([]string{"foo/pkg.go:1.2,3.4"}))
+				Expect(uncoveredSections(file.Name())).To(Equal([]Section{{"foo/pkg.go", 1, 2, 3, 4, 100002}}))
 			})
 		})
 
 		It("does not show covered", func() {
 			withTempFile("mode: set\nfoo/pkg.go:1.2,3.4 1 1\n", func(file *os.File) {
-				Expect(uncoveredSections(file.Name())).To(Equal([]string{}))
+				Expect(uncoveredSections(file.Name())).To(Equal([]Section{}))
 			})
 		})
 
 		It("does not show covered even if coverage ends in 0", func() {
 			withTempFile("mode: set\nfoo/pkg.go:1.2,3.4 1 10\n", func(file *os.File) {
-				Expect(uncoveredSections(file.Name())).To(Equal([]string{}))
+				Expect(uncoveredSections(file.Name())).To(Equal([]Section{}))
 			})
 		})
 	})

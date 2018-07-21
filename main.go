@@ -13,6 +13,32 @@ func main() {
 	exitFunction(goTestCheckCoverage(argv))
 }
 
+type Section struct {
+	file      string
+	startLine int
+	startChar int
+	endLine   int
+	endChar   int
+	sortvalue int
+}
+
+// covert raw coverage line into a section github.com/foo/bar/baz.go:1.2,3.5 1 0
+func NewSection(raw string) Section {
+	parts := strings.Split(raw, ":")
+	file := parts[0]
+	parts = strings.FieldsFunc(parts[1], func(r rune) bool { return r == '.' || r == ',' || r == ' ' })
+	startLine := stringToInt(parts[0])
+	startChar := stringToInt(parts[1])
+	endLine := stringToInt(parts[2])
+	endChar := stringToInt(parts[3])
+	sortValue := startLine*100000 + startChar // we group by file, so we only need to sort by line+char
+	return Section{file, startLine, startChar, endLine, endChar, sortValue}
+}
+
+func (s Section) Numbers() string {
+	return fmt.Sprintf("%v.%v,%v.%v", s.startLine, s.startChar, s.endLine, s.endChar)
+}
+
 // injection point to enable test coverage
 var exitFunction func(code int) = os.Exit
 
@@ -40,21 +66,24 @@ func runGoTestWithCoverage(argv []string, coveragePath string) (exitCode int) {
 func checkCoverage(coveragePath string) (exitCode int) {
 	// Tests passed, so let's check coverage for each file that has coverage
 	uncoveredSections := uncoveredSections(coveragePath)
-	pathSections := groupUncoveredSectionsByPath(uncoveredSections)
-	iterateSorted(pathSections, func(path string, sections []string) {
+	pathSections := groupSectionsByPath(uncoveredSections)
+	wd, err := os.Getwd()
+	check(err)
+
+	iterateSorted(pathSections, func(path string, sections []Section) {
 		configured := configuredUncovered(path)
 		current := len(sections)
 		if current > configured {
 			// remove package prefix like "github.com/user/lib", but cache the call to os.Getwd
-			wd, err := os.Getwd()
-			check(err)
+			path = removeLocalPackageFromPath(path, wd)
 
 			// TODO: color when tty
-			path = removeLocalPackageFromPath(path, wd)
 			fmt.Fprintf(os.Stderr, "%v new uncovered sections introduced (%v current vs %v configured)\n", path, current, configured)
 
-			sections = collect(sections, func(section string) string { return removeLocalPackageFromPath(section, wd) })
-			fmt.Fprintln(os.Stderr, strings.Join(sections, "\n"))
+			for _, section := range sections {
+				// copy-paste friendly snippets
+				fmt.Fprintln(os.Stderr, path+":"+section.Numbers())
+			}
 
 			exitCode = 1
 		}
@@ -62,13 +91,13 @@ func checkCoverage(coveragePath string) (exitCode int) {
 	return
 }
 
-func groupUncoveredSectionsByPath(sections []string) (grouped map[string][]string) {
-	grouped = map[string][]string{}
+func groupSectionsByPath(sections []Section) (grouped map[string][]Section) {
+	grouped = map[string][]Section{}
 	for _, section := range sections {
-		path := strings.Split(section, ":")[0]
+		path := section.file
 		group, ok := grouped[path]
 		if !ok {
-			grouped[path] = []string{}
+			grouped[path] = []Section{}
 		}
 		grouped[path] = append(group, section)
 	}
@@ -76,51 +105,31 @@ func groupUncoveredSectionsByPath(sections []string) (grouped map[string][]strin
 }
 
 // Find the uncovered sections (file:line.char,line.char) given a coverage file
-func uncoveredSections(coverageFilePath string) (sections []string) {
+func uncoveredSections(coverageFilePath string) (sections []Section) {
+	sections = []Section{}
 	content := readFile(coverageFilePath)
 
-	sections = splitWithoutEmpty(content, '\n')
-	if len(sections) == 0 {
-		return []string{}
-	}
+	lines := splitWithoutEmpty(content, '\n')
 
 	// remove the initial `set: mode` line
-	sections = sections[1:]
+	if len(lines) == 0 {
+		return
+	}
+	lines = lines[1:]
 
-	// find sections that are uncovered (end in " 0")
-	sections = filter(sections, func(line string) bool { return strings.HasSuffix(line, " 0") })
+	// we want lines that end in " 0", they have no coverage
+	for _, line := range lines {
+		if strings.HasSuffix(line, " 0") {
+			sections = append(sections, NewSection(line))
+		}
+	}
 
-	// remove coverage counters from sections
-	sections = collect(sections, func(section string) string { return strings.Split(section, " ")[0] })
-
-	sortSections(sections)
+	// sort sections since go does not
+	sort.Slice(sections, func(i, j int) bool {
+		return sections[i].sortvalue < sections[j].sortvalue
+	})
 
 	return
-}
-
-// sort by line+char since go does not do that,
-// we don't need to sort by file since we group by file later
-// TODO: sorting a nested array would be much nicer that having to declare an extra type
-func sortSections(sections []string) {
-	sortableSections := make([]SortableSection, len(sections))
-	for i, section := range sections {
-		rest := strings.Split(section, ":")[1]
-		parts := strings.FieldsFunc(rest, func(r rune) bool { return r == '.' || r == ',' })
-		line := stringToInt(parts[0])
-		char := stringToInt(parts[1])
-		sortableSections[i] = SortableSection{section, line*10000 + char}
-	}
-	sort.Slice(sortableSections, func(i, j int) bool {
-		return sortableSections[i].sort < sortableSections[j].sort
-	})
-	for i, e := range sortableSections {
-		sections[i] = e.raw
-	}
-}
-
-type SortableSection struct {
-	raw  string
-	sort int
 }
 
 // turn foo.com/foo/bar/a.go into a.go if we are in a directory that ends with foo.com/foo/bar
