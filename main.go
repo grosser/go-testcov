@@ -73,12 +73,17 @@ func checkCoverage(coveragePath string) (exitCode int) {
 	iterateSorted(pathSections, func(path string, sections []Section) {
 		configured := configuredUncovered(path)
 		current := len(sections)
-		if current > configured {
-			// remove package prefix like "github.com/user/lib", but cache the call to os.Getwd
-			path = removeLocalPackageFromPath(path, wd)
+		if current == configured {
+			return
+		}
 
+		// remove package prefix like "github.com/user/lib", but cache the call to os.Getwd
+		path = removeLocalPackageFromPath(path, wd)
+		details := fmt.Sprintf("(%v current vs %v configured)", current, configured)
+
+		if current > configured {
 			// TODO: color when tty
-			fmt.Fprintf(os.Stderr, "%v new uncovered sections introduced (%v current vs %v configured)\n", path, current, configured)
+			fmt.Fprintf(os.Stderr, "%v new uncovered sections introduced %v\n", path, details)
 
 			// sort sections since go does not
 			sort.Slice(sections, func(i, j int) bool {
@@ -91,6 +96,8 @@ func checkCoverage(coveragePath string) (exitCode int) {
 			}
 
 			exitCode = 1
+		} else {
+			fmt.Fprintf(os.Stderr, "%v has less uncovered sections %v, decrement configured uncovered?\n", path, details)
 		}
 	})
 	return

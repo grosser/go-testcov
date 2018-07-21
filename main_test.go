@@ -174,13 +174,13 @@ var _ = Describe("go-testcov", func() {
 			})
 		})
 
-		It("passes when configured uncovered is above actual uncovered", func() {
+		It("passes and warns warns when configured uncovered is above actual uncovered", func() {
 			withFakeGo("echo header > coverage.out; echo foo:1.2,1.3 0 >> coverage.out; echo foo:2.2,2.3 0 >> coverage.out", func() {
 				withFakeGoPath(func(goPath string) {
 					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 3")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{0, "", ""},
+						[]interface{}{0, "", "foo has less uncovered sections (2 current vs 3 configured), decrement configured uncovered?\n"},
 					)
 				})
 			})
