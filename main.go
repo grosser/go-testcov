@@ -80,6 +80,11 @@ func checkCoverage(coveragePath string) (exitCode int) {
 			// TODO: color when tty
 			fmt.Fprintf(os.Stderr, "%v new uncovered sections introduced (%v current vs %v configured)\n", path, current, configured)
 
+			// sort sections since go does not
+			sort.Slice(sections, func(i, j int) bool {
+				return sections[i].sortvalue < sections[j].sortvalue
+			})
+
 			for _, section := range sections {
 				// copy-paste friendly snippets
 				fmt.Fprintln(os.Stderr, path+":"+section.Numbers())
@@ -123,11 +128,6 @@ func uncoveredSections(coverageFilePath string) (sections []Section) {
 			sections = append(sections, NewSection(line))
 		}
 	}
-
-	// sort sections since go does not
-	sort.Slice(sections, func(i, j int) bool {
-		return sections[i].sortvalue < sections[j].sortvalue
-	})
 
 	return
 }
