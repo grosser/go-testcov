@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 )
@@ -94,4 +95,10 @@ func iterateSorted(data map[string][]string, fn func(string, []string)) {
 
 func joinPath(parts ...string) string {
 	return strings.Join(parts, string(os.PathSeparator))
+}
+
+func stringToInt(string string) int {
+	coverted, err := strconv.Atoi(string)
+	check(err)
+	return coverted
 }
