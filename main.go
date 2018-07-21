@@ -14,7 +14,7 @@ func main() {
 }
 
 type Section struct {
-	file      string
+	path      string
 	startLine int
 	startChar int
 	endLine   int
@@ -24,14 +24,14 @@ type Section struct {
 
 // covert raw coverage line into a section github.com/foo/bar/baz.go:1.2,3.5 1 0
 func NewSection(raw string) Section {
-	parts := strings.Split(raw, ":")
+	parts := strings.SplitN(raw, ":", 2)
 	file := parts[0]
 	parts = strings.FieldsFunc(parts[1], func(r rune) bool { return r == '.' || r == ',' || r == ' ' })
 	startLine := stringToInt(parts[0])
 	startChar := stringToInt(parts[1])
 	endLine := stringToInt(parts[2])
 	endChar := stringToInt(parts[3])
-	sortValue := startLine*100000 + startChar // we group by file, so we only need to sort by line+char
+	sortValue := startLine*100000 + startChar // we group by path, so we only need to sort by line+char
 	return Section{file, startLine, startChar, endLine, endChar, sortValue}
 }
 
@@ -63,8 +63,8 @@ func runGoTestWithCoverage(argv []string, coveragePath string) (exitCode int) {
 	return runCommand("go", argv...)
 }
 
+// Tests passed, so let's check coverage for each path that has coverage
 func checkCoverage(coveragePath string) (exitCode int) {
-	// Tests passed, so let's check coverage for each file that has coverage
 	uncoveredSections := uncoveredSections(coveragePath)
 	pathSections := groupSectionsByPath(uncoveredSections)
 	wd, err := os.Getwd()
@@ -99,7 +99,7 @@ func checkCoverage(coveragePath string) (exitCode int) {
 func groupSectionsByPath(sections []Section) (grouped map[string][]Section) {
 	grouped = map[string][]Section{}
 	for _, section := range sections {
-		path := section.file
+		path := section.path
 		group, ok := grouped[path]
 		if !ok {
 			grouped[path] = []Section{}
@@ -109,7 +109,7 @@ func groupSectionsByPath(sections []Section) (grouped map[string][]Section) {
 	return
 }
 
-// Find the uncovered sections (file:line.char,line.char) given a coverage file
+// Find the uncovered sections given a coverage path
 func uncoveredSections(coverageFilePath string) (sections []Section) {
 	sections = []Section{}
 	content := readFile(coverageFilePath)
@@ -136,14 +136,14 @@ func uncoveredSections(coverageFilePath string) (sections []Section) {
 func removeLocalPackageFromPath(path string, workingDirectory string) string {
 	prefixSize := 3
 	separator := string(os.PathSeparator)
-	parts := strings.Split(path, separator)
+	parts := strings.SplitN(path, separator, prefixSize+1)
 	if len(parts) <= prefixSize {
 		return path
 	}
 
 	prefix := strings.Join(parts[:prefixSize], separator)
 	if strings.HasSuffix(workingDirectory, prefix) {
-		return strings.Split(path, prefix+separator)[1]
+		return strings.SplitN(path, prefix+separator, 2)[1]
 	}
 
 	return path
