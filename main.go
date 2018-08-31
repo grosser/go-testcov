@@ -162,8 +162,7 @@ func configuredUncovered(path string) (count int) {
 	regex := regexp.MustCompile("// *untested sections: *([0-9]+)")
 	match := regex.FindStringSubmatch(content)
 	if len(match) == 2 {
-		coverted := stringToInt(match[1])
-		return coverted
+		return stringToInt(match[1])
 	} else {
 		return 0
 	}
