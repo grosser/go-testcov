@@ -71,19 +71,20 @@ func checkCoverage(coveragePath string) (exitCode int) {
 	check(err)
 
 	iterateSorted(pathSections, func(path string, sections []Section) {
-		configured := configuredUncovered(path)
+		// remove package prefix like "github.com/user/lib", but cache the call to os.Getwd
+		displayPath, readPath := normalizeModulePath(path, wd)
+
+		configured := configuredUncovered(readPath)
 		current := len(sections)
 		if current == configured {
 			return
 		}
 
-		// remove package prefix like "github.com/user/lib", but cache the call to os.Getwd
-		path = removeLocalPackageFromPath(path, wd)
 		details := fmt.Sprintf("(%v current vs %v configured)", current, configured)
 
 		if current > configured {
 			// TODO: color when tty
-			fmt.Fprintf(os.Stderr, "%v new uncovered sections introduced %v\n", path, details)
+			fmt.Fprintf(os.Stderr, "%v new uncovered sections introduced %v\n", displayPath, details)
 
 			// sort sections since go does not
 			sort.Slice(sections, func(i, j int) bool {
@@ -92,12 +93,12 @@ func checkCoverage(coveragePath string) (exitCode int) {
 
 			for _, section := range sections {
 				// copy-paste friendly snippets
-				fmt.Fprintln(os.Stderr, path+":"+section.Numbers())
+				fmt.Fprintln(os.Stderr, displayPath+":"+section.Numbers())
 			}
 
 			exitCode = 1
 		} else {
-			fmt.Fprintf(os.Stderr, "%v has less uncovered sections %v, decrement configured uncovered?\n", path, details)
+			fmt.Fprintf(os.Stderr, "%v has less uncovered sections %v, decrement configured uncovered?\n", displayPath, details)
 		}
 	})
 	return
@@ -139,26 +140,43 @@ func uncoveredSections(coverageFilePath string) (sections []Section) {
 	return
 }
 
-// turn foo.com/foo/bar/a.go into a.go if we are in a directory that ends with foo.com/foo/bar
-func removeLocalPackageFromPath(path string, workingDirectory string) string {
-	prefixSize := 3
+func normalizeModulePath(path string, workingDirectory string) (displayPath string, readPath string) {
+	modulePrefixSize := 3 // foo.com/bar/baz + file.go
 	separator := string(os.PathSeparator)
-	parts := strings.SplitN(path, separator, prefixSize+1)
-	if len(parts) <= prefixSize {
-		return path
+	parts := strings.SplitN(path, separator, modulePrefixSize+1)
+	gopath, hasGopath := os.LookupEnv("GOPATH")
+
+	// path too short .... idk what to do
+	if len(parts) <= modulePrefixSize {
+		if hasGopath {
+			return path, joinPath(gopath, "src", path)
+		} else {
+			return path, path
+		}
+
 	}
 
-	prefix := strings.Join(parts[:prefixSize], separator)
+	prefix := strings.Join(parts[:modulePrefixSize], separator)
+	demodularized := strings.SplitN(path, prefix+separator, 2)[1]
+
+	// there is no gopath ... remove module nesting
+	if !hasGopath {
+		return demodularized, demodularized
+	}
+
+	// we are in a nested folder ... remove module nesting and expand full gopath
 	if strings.HasSuffix(workingDirectory, prefix) {
-		return strings.SplitN(path, prefix+separator, 2)[1]
+		return demodularized, joinPath(gopath, "src", path)
 	}
 
-	return path
+	// testing remoate package, don't expand display but expand full gopath
+	return path, joinPath(gopath, "src", path)
 }
 
 // How many sections are expected to be uncovered, 0 if not configured
+// TODO: return an error when the file does not exist and handle that gracefully in the caller
 func configuredUncovered(path string) (count int) {
-	content := readFile(joinPath(os.Getenv("GOPATH"), "src", path))
+	content := readFile(path)
 	regex := regexp.MustCompile("// *untested sections: *([0-9]+)")
 	match := regex.FindStringSubmatch(content)
 	if len(match) == 2 {
