@@ -59,6 +59,21 @@ func withEnv(key string, value string, fn func()) {
 	fn()
 }
 
+func withoutEnv(key string, fn func()) {
+	old, wasSet := os.LookupEnv(key)
+	if wasSet {
+		os.Unsetenv(key)
+		defer os.Setenv(key, old)
+	}
+	fn()
+}
+
+func inTempDir(fn func()) {
+	withTempDir(func(dir string) {
+		chDir(dir, fn)
+	})
+}
+
 func chDir(dir string, fn func()) {
 	old, err := os.Getwd()
 	noError(err)

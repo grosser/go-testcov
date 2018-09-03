@@ -186,6 +186,30 @@ var _ = Describe("go-testcov", func() {
 			})
 		})
 
+		It("can warn when using unmodularized path", func() {
+			withFakeGo("echo header > coverage.out; echo baz.go:1.2,1.3 0 >> coverage.out; echo baz.go:2.2,2.3 0 >> coverage.out", func() {
+				withoutEnv("GOPATH", func() {
+					writeFile("baz.go", "// untested sections: 3")
+					expectCommand(
+						runGoTestWithCoverage,
+						[]interface{}{0, "", "baz.go has less uncovered sections (2 current vs 3 configured), decrement configured uncovered?\n"},
+					)
+				})
+			})
+		})
+
+		It("can warn when not using GOPATH", func() {
+			withFakeGo("echo header > coverage.out; echo github.com/foo/bar/baz.go:1.2,1.3 0 >> coverage.out; echo github.com/foo/bar/baz.go:2.2,2.3 0 >> coverage.out", func() {
+				withoutEnv("GOPATH", func() {
+					writeFile("baz.go", "// untested sections: 3")
+					expectCommand(
+						runGoTestWithCoverage,
+						[]interface{}{0, "", "baz.go has less uncovered sections (2 current vs 3 configured), decrement configured uncovered?\n"},
+					)
+				})
+			})
+		})
+
 		It("cleans up coverage.out", func() {
 			withFakeGo("touch coverage.out\necho 1", func() {
 				expectCommand(
@@ -226,15 +250,15 @@ var _ = Describe("go-testcov", func() {
 
 	Describe("configuredUncovered", func() {
 		It("returns 0 when not configured", func() {
-			withFakeGoPath(func(goPath string) {
-				writeFile(joinPath(goPath, "src", "foo"), "")
+			inTempDir(func() {
+				writeFile(joinPath("foo"), "")
 				Expect(configuredUncovered("foo")).To(Equal(0))
 			})
 		})
 
 		It("returns number when configured", func() {
-			withFakeGoPath(func(goPath string) {
-				writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 12")
+			inTempDir(func() {
+				writeFile("foo", "// untested sections: 12")
 				Expect(configuredUncovered("foo")).To(Equal(12))
 			})
 		})
