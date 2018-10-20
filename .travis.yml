@@ -10,8 +10,4 @@ go:
  - "1.10"
  - "1.9"
  - "1.8"
-script:
- - go test -race -cover -covermode=atomic
- - go install && go-testcov
- - go vet
- - '[ -z "`go fmt`" ]'
+script: go test -race -cover -covermode=atomic && go install && go-testcov && go vet && [ -z "`go fmt`" ]
