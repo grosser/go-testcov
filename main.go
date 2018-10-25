@@ -145,11 +145,18 @@ func normalizeModulePath(path string, workingDirectory string) (displayPath stri
 	separator := string(os.PathSeparator)
 	parts := strings.SplitN(path, separator, modulePrefixSize+1)
 	gopath, hasGopath := os.LookupEnv("GOPATH")
+	inGopath := false
+	goPrefixedPath := joinPath(gopath, "src", path)
 
-	// path too short .... idk what to do
+	if hasGopath {
+		_, err := os.Stat(goPrefixedPath)
+		inGopath = !os.IsNotExist(err)
+	}
+
+	// path too short, return a good guess
 	if len(parts) <= modulePrefixSize {
-		if hasGopath {
-			return path, joinPath(gopath, "src", path)
+		if inGopath {
+			return path, goPrefixedPath
 		} else {
 			return path, path
 		}
@@ -159,18 +166,18 @@ func normalizeModulePath(path string, workingDirectory string) (displayPath stri
 	prefix := strings.Join(parts[:modulePrefixSize], separator)
 	demodularized := strings.SplitN(path, prefix+separator, 2)[1]
 
-	// there is no gopath ... remove module nesting
-	if !hasGopath {
+	// folder is not in go path ... remove module nesting
+	if !inGopath {
 		return demodularized, demodularized
 	}
 
 	// we are in a nested folder ... remove module nesting and expand full gopath
 	if strings.HasSuffix(workingDirectory, prefix) {
-		return demodularized, joinPath(gopath, "src", path)
+		return demodularized, goPrefixedPath
 	}
 
-	// testing remoate package, don't expand display but expand full gopath
-	return path, joinPath(gopath, "src", path)
+	// testing remote package, don't expand display but expand full gopath
+	return path, goPrefixedPath
 }
 
 // How many sections are expected to be uncovered, 0 if not configured

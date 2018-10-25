@@ -210,6 +210,18 @@ var _ = Describe("go-testcov", func() {
 			})
 		})
 
+		It("can warn when using GOPATH but not being in GOPATH", func() {
+			withFakeGo("echo header > coverage.out; echo github.com/foo/bar/baz.go:1.2,1.3 0 >> coverage.out; echo github.com/foo/bar/baz.go:2.2,2.3 0 >> coverage.out", func() {
+				withEnv("GOPATH", "/foo", func() {
+					writeFile("baz.go", "// untested sections: 3")
+					expectCommand(
+						runGoTestWithCoverage,
+						[]interface{}{0, "", "baz.go has less uncovered sections (2 current vs 3 configured), decrement configured uncovered?\n"},
+					)
+				})
+			})
+		})
+
 		It("cleans up coverage.out", func() {
 			withFakeGo("touch coverage.out\necho 1", func() {
 				expectCommand(
