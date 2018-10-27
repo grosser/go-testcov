@@ -80,15 +80,19 @@ func checkCoverage(coveragePath string) (exitCode int) {
 			return
 		}
 
-		// filter out sections that are marked with "untested section" comment
+		// keep sections that are marked with "untested section" comment
+		// need to be careful to not change the list while iterating, see https://pauladamsmith.com/blog/2016/07/go-modify-slice-iteration.html
 		// NOTE: this is a bit rough as it does not account for partial lines via start/end characters
 		content := strings.Split(readFile(readPath), "\n")
 		regex := regexp.MustCompile("//.*untested section(\\s|$)")
-		for i, section := range sections {
+		uncheckedSections := sections
+		sections = []Section{}
+		for _, section := range uncheckedSections {
 			for lineNumber := section.startLine; lineNumber <= section.endLine; lineNumber++ {
 				if regex.MatchString(content[lineNumber-1]) {
-					sections = append(sections[:i], sections[i+1:]...) // remove it
-					break
+					break // section is ignored
+				} else if lineNumber == section.endLine {
+					sections = append(sections, section) // keep the section
 				}
 			}
 		}
