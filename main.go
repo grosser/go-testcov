@@ -80,6 +80,24 @@ func checkCoverage(coveragePath string) (exitCode int) {
 			return
 		}
 
+		// filter out sections that are marked with "untested section" comment
+		// NOTE: this is a bit rough as it does not account for partial lines via start/end characters
+		content := strings.Split(readFile(readPath), "\n")
+		regex := regexp.MustCompile("//.*untested section(\\s|$)")
+		for i, section := range sections {
+			for lineNumber := section.startLine; lineNumber <= section.endLine; lineNumber++ {
+				if regex.MatchString(content[lineNumber-1]) {
+					sections = append(sections[:i], sections[i+1:]...) // remove it
+					break
+				}
+			}
+		}
+		current = len(sections)
+
+		if current == configured {
+			return
+		}
+
 		details := fmt.Sprintf("(%v current vs %v configured)", current, configured)
 
 		if current > configured {

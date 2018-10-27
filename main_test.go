@@ -105,7 +105,7 @@ var _ = Describe("go-testcov", func() {
 		It("fails when configured uncovered is below actual uncovered", func() {
 			withFakeGo("echo header > coverage.out; echo foo:2.2,2.3 0 >> coverage.out; echo foo:1.2,1.3 0 >> coverage.out", func() {
 				withFakeGoPath(func(goPath string) {
-					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 1")
+					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 1\n")
 					expectCommand(
 						runGoTestWithCoverage,
 						[]interface{}{1, "", "foo new uncovered sections introduced (2 current vs 1 configured)\nfoo:1.2,1.3\nfoo:2.2,2.3\n"},
@@ -139,7 +139,7 @@ var _ = Describe("go-testcov", func() {
 		It("can show uncovered for multiple files", func() {
 			withFakeGo("echo header > coverage.out; echo foo:1.2,1.3 0 >> coverage.out; echo foo:2.2,2.3 0 >> coverage.out; echo bar:1.2,1.3 0 >> coverage.out", func() {
 				withFakeGoPath(func(goPath string) {
-					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 1")
+					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 1\n")
 					writeFile(joinPath(goPath, "src", "bar"), "")
 					expectCommand(
 						runGoTestWithCoverage,
@@ -152,7 +152,7 @@ var _ = Describe("go-testcov", func() {
 		It("keeps sections in their natural order", func() {
 			withFakeGo("echo header > coverage.out; echo foo:1.2,1.3 0 >> coverage.out; echo foo:2.2,2.3 0 >> coverage.out", func() {
 				withFakeGoPath(func(goPath string) {
-					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 1")
+					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 1\n")
 					writeFile(joinPath(goPath, "src", "bar"), "")
 					expectCommand(
 						runGoTestWithCoverage,
@@ -174,10 +174,22 @@ var _ = Describe("go-testcov", func() {
 			})
 		})
 
-		It("passes and warns warns when configured uncovered is above actual uncovered", func() {
+		It("passes when configured via inline comments", func() {
+			withFakeGo("echo header > coverage.out; echo foo:1.2,3.0 0 >> coverage.out", func() {
+				withFakeGoPath(func(goPath string) {
+					writeFile(joinPath(goPath, "src", "foo"), "func main(){\n// untested section\n}")
+					expectCommand(
+						runGoTestWithCoverage,
+						[]interface{}{0, "", ""},
+					)
+				})
+			})
+		})
+
+		It("passes and warns when configured uncovered is above actual uncovered", func() {
 			withFakeGo("echo header > coverage.out; echo foo:1.2,1.3 0 >> coverage.out; echo foo:2.2,2.3 0 >> coverage.out", func() {
 				withFakeGoPath(func(goPath string) {
-					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 3")
+					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 3\n")
 					expectCommand(
 						runGoTestWithCoverage,
 						[]interface{}{0, "", "foo has less uncovered sections (2 current vs 3 configured), decrement configured uncovered?\n"},
@@ -189,7 +201,7 @@ var _ = Describe("go-testcov", func() {
 		It("can warn when using unmodularized path", func() {
 			withFakeGo("echo header > coverage.out; echo baz.go:1.2,1.3 0 >> coverage.out; echo baz.go:2.2,2.3 0 >> coverage.out", func() {
 				withoutEnv("GOPATH", func() {
-					writeFile("baz.go", "// untested sections: 3")
+					writeFile("baz.go", "// untested sections: 3\n")
 					expectCommand(
 						runGoTestWithCoverage,
 						[]interface{}{0, "", "baz.go has less uncovered sections (2 current vs 3 configured), decrement configured uncovered?\n"},
@@ -201,7 +213,7 @@ var _ = Describe("go-testcov", func() {
 		It("can warn when not using GOPATH", func() {
 			withFakeGo("echo header > coverage.out; echo github.com/foo/bar/baz.go:1.2,1.3 0 >> coverage.out; echo github.com/foo/bar/baz.go:2.2,2.3 0 >> coverage.out", func() {
 				withoutEnv("GOPATH", func() {
-					writeFile("baz.go", "// untested sections: 3")
+					writeFile("baz.go", "// untested sections: 3\n")
 					expectCommand(
 						runGoTestWithCoverage,
 						[]interface{}{0, "", "baz.go has less uncovered sections (2 current vs 3 configured), decrement configured uncovered?\n"},
@@ -213,7 +225,7 @@ var _ = Describe("go-testcov", func() {
 		It("can warn when using GOPATH but not being in GOPATH", func() {
 			withFakeGo("echo header > coverage.out; echo github.com/foo/bar/baz.go:1.2,1.3 0 >> coverage.out; echo github.com/foo/bar/baz.go:2.2,2.3 0 >> coverage.out", func() {
 				withEnv("GOPATH", "/foo", func() {
-					writeFile("baz.go", "// untested sections: 3")
+					writeFile("baz.go", "// untested sections: 3\n")
 					expectCommand(
 						runGoTestWithCoverage,
 						[]interface{}{0, "", "baz.go has less uncovered sections (2 current vs 3 configured), decrement configured uncovered?\n"},

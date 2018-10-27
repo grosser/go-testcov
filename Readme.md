@@ -4,6 +4,7 @@
 
  - 🎉 Instant, actionable feedback on 💚 test run
  - 🎉 Onboard legacy code with `// untested sections: 5` comment
+ - 🎉 Mark uncovered code sections with inline `// untested section` comment
  - 🚫 PRs with bad test coverage
  - 🚫 External/paid coverage tools
 
@@ -21,8 +22,8 @@ pkg.go:54.5,56.5
 
 ## Notes
 
- - Details on how coverage in go works https://blog.golang.org/cover and it's limitations
- - Runtime overhead is about 3%
+ - [coverage in go](https://blog.golang.org/cover)
+ - Runtime overhead of is about 3%
  - Use `-covermode atomic` when testing parallel algorithms
  - Needs go 1.8+
 
