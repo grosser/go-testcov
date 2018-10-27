@@ -2,9 +2,6 @@ language: go
 sudo: false
 branches:
   only: master
-before_install:
- - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
- - dep ensure
 go:
  - "1.11"
  - "1.10"
