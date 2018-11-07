@@ -84,7 +84,7 @@ func checkCoverage(coveragePath string) (exitCode int) {
 		// need to be careful to not change the list while iterating, see https://pauladamsmith.com/blog/2016/07/go-modify-slice-iteration.html
 		// NOTE: this is a bit rough as it does not account for partial lines via start/end characters
 		content := strings.Split(readFile(readPath), "\n")
-		regex := regexp.MustCompile("//.*untested section(\\s|$)")
+		regex := regexp.MustCompile("//.*untested section(\\s|,|$)")
 		uncheckedSections := sections
 		sections = []Section{}
 		for _, section := range uncheckedSections {
