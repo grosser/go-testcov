@@ -19,7 +19,7 @@ type Section struct {
 	startChar int
 	endLine   int
 	endChar   int
-	sortvalue int
+	sortValue int
 }
 
 // covert raw coverage line into a section github.com/foo/bar/baz.go:1.2,3.5 1 0
@@ -110,7 +110,7 @@ func checkCoverage(coveragePath string) (exitCode int) {
 
 			// sort sections since go does not
 			sort.Slice(sections, func(i, j int) bool {
-				return sections[i].sortvalue < sections[j].sortvalue
+				return sections[i].sortValue < sections[j].sortValue
 			})
 
 			for _, section := range sections {

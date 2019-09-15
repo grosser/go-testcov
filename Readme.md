@@ -27,6 +27,17 @@ pkg.go:54.5,56.5
  - Use `-covermode atomic` when testing parallel algorithms
  - Needs go 1.8+
 
+
+## Development
+
+Run `go-testcov` on itself:
+
+```
+go install
+go-testcov
+```
+
+
 Author
 ======
 [Michael Grosser](http://grosser.it)<br/>
