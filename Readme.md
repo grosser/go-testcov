@@ -25,16 +25,17 @@ pkg.go:54.5,56.5
  - [coverage in go](https://blog.golang.org/cover)
  - Runtime overhead of is about 3%
  - Use `-covermode atomic` when testing parallel algorithms
- - Needs go 1.8+
 
 
 ## Development
 
-Run `go-testcov` on itself:
+Test files are named `.gotest`, so they do not install test dependencies (gomega / ginko) when doing `go get`.
 
 ```
-go install
-go-testcov
+make dev            # rename .gottest to _test.go
+make undev          # rename _test.go to .gotest
+make test           # run go-testcov on itself
+make integration    # run everything travis runs locally
 ```
 
 
