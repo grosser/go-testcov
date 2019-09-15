@@ -77,7 +77,7 @@ func joinPath(parts ...string) string {
 }
 
 func stringToInt(string string) int {
-	coverted, err := strconv.Atoi(string)
+	converted, err := strconv.Atoi(string)
 	check(err)
-	return coverted
+	return converted
 }
