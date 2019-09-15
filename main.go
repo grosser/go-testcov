@@ -166,18 +166,18 @@ func normalizeModulePath(path string, workingDirectory string) (displayPath stri
 	modulePrefixSize := 3 // foo.com/bar/baz + file.go
 	separator := string(os.PathSeparator)
 	parts := strings.SplitN(path, separator, modulePrefixSize+1)
-	gopath, hasGopath := os.LookupEnv("GOPATH")
-	inGopath := false
-	goPrefixedPath := joinPath(gopath, "src", path)
+	goPath, hasGoPath := os.LookupEnv("GOPATH")
+	inGoPath := false
+	goPrefixedPath := joinPath(goPath, "src", path)
 
-	if hasGopath {
+	if hasGoPath {
 		_, err := os.Stat(goPrefixedPath)
-		inGopath = !os.IsNotExist(err)
+		inGoPath = !os.IsNotExist(err)
 	}
 
 	// path too short, return a good guess
 	if len(parts) <= modulePrefixSize {
-		if inGopath {
+		if inGoPath {
 			return path, goPrefixedPath
 		} else {
 			return path, path
@@ -189,16 +189,16 @@ func normalizeModulePath(path string, workingDirectory string) (displayPath stri
 	demodularized := strings.SplitN(path, prefix+separator, 2)[1]
 
 	// folder is not in go path ... remove module nesting
-	if !inGopath {
+	if !inGoPath {
 		return demodularized, demodularized
 	}
 
-	// we are in a nested folder ... remove module nesting and expand full gopath
+	// we are in a nested folder ... remove module nesting and expand full goPath
 	if strings.HasSuffix(workingDirectory, prefix) {
 		return demodularized, goPrefixedPath
 	}
 
-	// testing remote package, don't expand display but expand full gopath
+	// testing remote package, don't expand display but expand full goPath
 	return path, goPrefixedPath
 }
 
