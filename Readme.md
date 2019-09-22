@@ -34,8 +34,11 @@ Run `go-testcov` on itself:
 
 ```
 go install
+cd test
 go-testcov
 ```
+
+all tests are in `test/` so the main library does not force installation of gomega + ginkgo
 
 
 Author
