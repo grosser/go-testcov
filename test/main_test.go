@@ -165,10 +165,22 @@ var _ = Describe("go-testcov", func() {
 		It("passes when configured uncovered is equal to actual uncovered", func() {
 			withFakeGo("echo header > coverage.out; echo foo:1.2,1.3 0 >> coverage.out; echo foo:2.2,2.3 0 >> coverage.out", func() {
 				withFakeGoPath(func(goPath string) {
-					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 2")
+					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 2\n\n")
 					expectCommand(
 						runGoTestWithCoverage,
 						[]interface{}{0, "", ""},
+					)
+				})
+			})
+		})
+
+		It("passes when configured + inline uncovered is equal to actual uncovered", func() {
+			withFakeGo("echo header > coverage.out; echo foo:1.2,1.3 0 >> coverage.out; echo foo:2.2,2.3 0 >> coverage.out", func() {
+				withFakeGoPath(func(goPath string) {
+					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 2// untested section\n\n")
+					expectCommand(
+						runGoTestWithCoverage,
+						[]interface{}{0, "", "foo has less uncovered sections (1 current vs 2 configured), decrement configured uncovered?\n"},
 					)
 				})
 			})

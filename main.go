@@ -75,10 +75,6 @@ func checkCoverage(coveragePath string) (exitCode int) {
 		displayPath, readPath := normalizeModulePath(path, wd)
 
 		configured := configuredUncovered(readPath)
-		current := len(sections)
-		if current == configured {
-			return
-		}
 
 		// keep sections that are marked with "untested section" comment
 		// need to be careful to not change the list while iterating, see https://pauladamsmith.com/blog/2016/07/go-modify-slice-iteration.html
@@ -96,7 +92,7 @@ func checkCoverage(coveragePath string) (exitCode int) {
 				}
 			}
 		}
-		current = len(sections)
+		current := len(sections)
 
 		if current == configured {
 			return
