@@ -48,7 +48,7 @@ var exitFunction func(code int) = os.Exit
 func goTestCheckCoverage(argv []string) (exitCode int) {
 	// Run go test
 	coveragePath := "coverage.out"
-	os.Remove(coveragePath)
+	_ = os.Remove(coveragePath)
 	defer os.Remove(coveragePath)
 
 	exitCode = runGoTestWithCoverage(argv, coveragePath)
@@ -88,7 +88,7 @@ func checkCoverage(coveragePath string) (exitCode int) {
 
 		if current > configured {
 			// TODO: color when tty
-			fmt.Fprintf(os.Stderr, "%v new uncovered sections introduced %v\n", displayPath, details)
+			_, _ = fmt.Fprintf(os.Stderr, "%v new uncovered sections introduced %v\n", displayPath, details)
 
 			// sort sections since go does not
 			sort.Slice(sections, func(i, j int) bool {
@@ -97,12 +97,12 @@ func checkCoverage(coveragePath string) (exitCode int) {
 
 			for _, section := range sections {
 				// copy-paste friendly snippets
-				fmt.Fprintln(os.Stderr, displayPath+":"+section.Numbers())
+				_, _ = fmt.Fprintln(os.Stderr, displayPath+":"+section.Numbers())
 			}
 
 			exitCode = 1
 		} else {
-			fmt.Fprintf(os.Stderr, "%v has less uncovered sections %v, decrement configured uncovered?\n", displayPath, details)
+			_, _ = fmt.Fprintf(os.Stderr, "%v has less uncovered sections %v, decrement configured uncovered?\n", displayPath, details)
 		}
 	})
 	return
