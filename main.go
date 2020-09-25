@@ -23,6 +23,7 @@ type Section struct {
 }
 
 var inlineIgnore = regexp.MustCompile("//.*untested section(\\s|,|$)")
+var startInlineIgnore = regexp.MustCompile("^\\s*//.*untested section(\\s|,|$)")
 
 // covert raw coverage line into a section github.com/foo/bar/baz.go:1.2,3.5 1 0
 func NewSection(raw string) Section {
@@ -118,6 +119,8 @@ func filterSectionsIgnoredInline(sections []Section, content []string) []Section
 		for lineNumber := section.startLine; lineNumber <= section.endLine; lineNumber++ {
 			if inlineIgnore.MatchString(content[lineNumber-1]) {
 				break // section is ignored
+			} else if lineNumber >= 2 && startInlineIgnore.MatchString(content[lineNumber-2]) {
+				break // section is ignored by inline ignore above it
 			} else if lineNumber == section.endLine {
 				sections = append(sections, section) // keep the section
 			}
