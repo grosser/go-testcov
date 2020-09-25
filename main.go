@@ -22,6 +22,8 @@ type Section struct {
 	sortValue int
 }
 
+var inlineIgnore = regexp.MustCompile("//.*untested section(\\s|,|$)")
+
 // covert raw coverage line into a section github.com/foo/bar/baz.go:1.2,3.5 1 0
 func NewSection(raw string) Section {
 	parts := strings.SplitN(raw, ":", 2)
@@ -73,25 +75,9 @@ func checkCoverage(coveragePath string) (exitCode int) {
 	iterateSorted(pathSections, func(path string, sections []Section) {
 		// remove package prefix like "github.com/user/lib", but cache the call to os.Getwd
 		displayPath, readPath := normalizeModulePath(path, wd)
-
 		configured := configuredUncovered(readPath)
-
-		// keep sections that are marked with "untested section" comment
-		// need to be careful to not change the list while iterating, see https://pauladamsmith.com/blog/2016/07/go-modify-slice-iteration.html
-		// NOTE: this is a bit rough as it does not account for partial lines via start/end characters
 		content := strings.Split(readFile(readPath), "\n")
-		regex := regexp.MustCompile("//.*untested section(\\s|,|$)")
-		uncheckedSections := sections
-		sections = []Section{}
-		for _, section := range uncheckedSections {
-			for lineNumber := section.startLine; lineNumber <= section.endLine; lineNumber++ {
-				if regex.MatchString(content[lineNumber-1]) {
-					break // section is ignored
-				} else if lineNumber == section.endLine {
-					sections = append(sections, section) // keep the section
-				}
-			}
-		}
+		sections = filterSectionsIgnoredInline(sections, content)
 		current := len(sections)
 
 		if current == configured {
@@ -120,6 +106,24 @@ func checkCoverage(coveragePath string) (exitCode int) {
 		}
 	})
 	return
+}
+
+// keep sections that are marked with "untested section" comment
+// need to be careful to not change the list while iterating, see https://pauladamsmith.com/blog/2016/07/go-modify-slice-iteration.html
+// NOTE: this is a bit rough as it does not account for partial lines via start/end characters
+func filterSectionsIgnoredInline(sections []Section, content []string) []Section {
+	uncheckedSections := sections
+	sections = []Section{}
+	for _, section := range uncheckedSections {
+		for lineNumber := section.startLine; lineNumber <= section.endLine; lineNumber++ {
+			if inlineIgnore.MatchString(content[lineNumber-1]) {
+				break // section is ignored
+			} else if lineNumber == section.endLine {
+				sections = append(sections, section) // keep the section
+			}
+		}
+	}
+	return sections
 }
 
 func groupSectionsByPath(sections []Section) (grouped map[string][]Section) {
