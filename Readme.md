@@ -10,7 +10,7 @@
 
 ```
 go get github.com/grosser/go-testcov
-go-testcov
+go-testcov . # same arguments as `go test` uses
 ...
 test output
 ...
