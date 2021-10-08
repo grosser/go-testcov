@@ -3,7 +3,7 @@
 `go test` that fails on uncovered lines and shows them
 
  - 🎉 Instant, actionable feedback on 💚 test run
- - 🎉 Onboard legacy code with `// untested sections: 5` comment
+ - 🎉 Onboard legacy code with top of the file `// untested sections: 5` comment 
  - 🎉 Mark uncovered code sections with inline `// untested section` comment
  - 🚫 PRs with bad test coverage
  - 🚫 External/paid coverage tools
@@ -23,9 +23,9 @@ pkg.go:54.5,56.5
 ## Notes
 
  - [coverage in go](https://blog.golang.org/cover)
- - Runtime overhead of is about 3%
+ - Runtime overhead for coverage is about 3%
  - Use `-covermode atomic` when testing parallel algorithms
- - Needs go 1.8+
+ - To keep the `coverage.out` file run with `-cover`
 
 
 ## Development
