@@ -1,4 +1,4 @@
-# go-testcov [![Build Status](https://travis-ci.com/grosser/go-testcov.svg)](https://travis-ci.com/grosser/go-testcov) [![coverage](https://img.shields.io/badge/coverage-100%25-success.svg)](https://github.com/grosser/go-testcov)
+# go-testcov [![Test](https://github.com/grosser/go-testcov/actions/workflows/test.yml/badge.svg)](https://github.com/grosser/go-testcov/actions?query=branch%3Amaster) [![coverage](https://img.shields.io/badge/coverage-100%25-success.svg)](https://github.com/grosser/go-testcov)
 
 `go test` that fails on uncovered lines and shows them
 
