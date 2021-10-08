@@ -50,7 +50,12 @@ func goTestCheckCoverage(argv []string) (exitCode int) {
 	// Run go test
 	coveragePath := "coverage.out"
 	_ = os.Remove(coveragePath)
-	defer os.Remove(coveragePath)
+
+	// allow users to keep the coverage.out file
+	// TODO: parse options to find the location the user wanted and use+keep that
+	if !containsString(argv, "-cover") {
+		defer os.Remove(coveragePath)
+	}
 
 	exitCode = runGoTestWithCoverage(argv, coveragePath)
 	if exitCode == 0 {

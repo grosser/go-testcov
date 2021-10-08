@@ -268,6 +268,17 @@ var _ = Describe("go-testcov", func() {
 				Expect(err).ToNot(BeNil())
 			})
 		})
+
+		It("keeps coverage.out when requested", func() {
+			withFakeGo("touch coverage.out\necho 1", func() {
+				expectCommand(
+					func() int { return goTestCheckCoverage([]string{"hello", "world", "-cover"}) },
+					[]interface{}{0, "1\n", ""},
+				)
+				_, err := os.Stat("coverage.out")
+				Expect(err).To(BeNil())
+			})
+		})
 	})
 
 	Describe("uncoveredSections", func() {

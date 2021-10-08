@@ -81,3 +81,12 @@ func stringToInt(string string) int {
 	check(err)
 	return converted
 }
+
+func containsString(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
