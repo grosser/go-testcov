@@ -96,19 +96,19 @@ var _ = Describe("go-testcov", func() {
 					writeFile(joinPath(goPath, "src", "foo"), "")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{1, "", "foo new uncovered sections introduced (1 current vs 0 configured)\nfoo:1.2,1.3\n"},
+						[]interface{}{1, "", "foo new untested sections introduced (1 current vs 0 configured)\nfoo:1.2,1.3\n"},
 					)
 				})
 			})
 		})
 
-		It("fails when configured uncovered is below actual uncovered", func() {
+		It("fails when configured untested is below actual untested", func() {
 			withFakeGo("echo header > coverage.out; echo foo:2.2,2.3 0 >> coverage.out; echo foo:1.2,1.3 0 >> coverage.out", func() {
 				withFakeGoPath(func(goPath string) {
 					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 1\n")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{1, "", "foo new uncovered sections introduced (2 current vs 1 configured)\nfoo:1.2,1.3\nfoo:2.2,2.3\n"},
+						[]interface{}{1, "", "foo new untested sections introduced (2 current vs 1 configured)\nfoo:1.2,1.3\nfoo:2.2,2.3\n"},
 					)
 				})
 			})
@@ -118,7 +118,7 @@ var _ = Describe("go-testcov", func() {
 			withFailingTestInGoPath(func() {
 				expectCommand(
 					runGoTestWithCoverage,
-					[]interface{}{1, "", "foo2.go new uncovered sections introduced (1 current vs 0 configured)\nfoo2.go:1.2,1.3\n"},
+					[]interface{}{1, "", "foo2.go new untested sections introduced (1 current vs 0 configured)\nfoo2.go:1.2,1.3\n"},
 				)
 			})
 		})
@@ -130,20 +130,20 @@ var _ = Describe("go-testcov", func() {
 				chDir(other, func() {
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{1, "", "foo.com/bar/baz/foo2.go new uncovered sections introduced (1 current vs 0 configured)\nfoo.com/bar/baz/foo2.go:1.2,1.3\n"},
+						[]interface{}{1, "", "foo.com/bar/baz/foo2.go new untested sections introduced (1 current vs 0 configured)\nfoo.com/bar/baz/foo2.go:1.2,1.3\n"},
 					)
 				})
 			})
 		})
 
-		It("can show uncovered for multiple files", func() {
+		It("can show untested for multiple files", func() {
 			withFakeGo("echo header > coverage.out; echo foo:1.2,1.3 0 >> coverage.out; echo foo:2.2,2.3 0 >> coverage.out; echo bar:1.2,1.3 0 >> coverage.out", func() {
 				withFakeGoPath(func(goPath string) {
 					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 1\n")
 					writeFile(joinPath(goPath, "src", "bar"), "")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{1, "", "bar new uncovered sections introduced (1 current vs 0 configured)\nbar:1.2,1.3\nfoo new uncovered sections introduced (2 current vs 1 configured)\nfoo:1.2,1.3\nfoo:2.2,2.3\n"},
+						[]interface{}{1, "", "bar new untested sections introduced (1 current vs 0 configured)\nbar:1.2,1.3\nfoo new untested sections introduced (2 current vs 1 configured)\nfoo:1.2,1.3\nfoo:2.2,2.3\n"},
 					)
 				})
 			})
@@ -156,13 +156,13 @@ var _ = Describe("go-testcov", func() {
 					writeFile(joinPath(goPath, "src", "bar"), "")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{1, "", "foo new uncovered sections introduced (2 current vs 1 configured)\nfoo:1.2,1.3\nfoo:2.2,2.3\n"},
+						[]interface{}{1, "", "foo new untested sections introduced (2 current vs 1 configured)\nfoo:1.2,1.3\nfoo:2.2,2.3\n"},
 					)
 				})
 			})
 		})
 
-		It("passes when configured uncovered is equal to actual uncovered", func() {
+		It("passes when configured untested is equal to actual untested", func() {
 			withFakeGo("echo header > coverage.out; echo foo:1.2,1.3 0 >> coverage.out; echo foo:2.2,2.3 0 >> coverage.out", func() {
 				withFakeGoPath(func(goPath string) {
 					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 2\n\n")
@@ -174,13 +174,13 @@ var _ = Describe("go-testcov", func() {
 			})
 		})
 
-		It("passes when configured + inline uncovered is equal to actual uncovered", func() {
+		It("passes when configured + inline untested is equal to actual untested", func() {
 			withFakeGo("echo header > coverage.out; echo foo:2.2,2.3 0 >> coverage.out; echo foo:3.2,3.3 0 >> coverage.out", func() {
 				withFakeGoPath(func(goPath string) {
 					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 2\nfoo// untested section\nbar\n")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{0, "", "foo has less uncovered sections (1 current vs 2 configured), decrement configured uncovered?\n"},
+						[]interface{}{0, "", "foo has less untested sections (1 current vs 2 configured), decrement configured untested?\n"},
 					)
 				})
 			})
@@ -210,13 +210,13 @@ var _ = Describe("go-testcov", func() {
 			})
 		})
 
-		It("passes and warns when configured uncovered is above actual uncovered", func() {
+		It("passes and warns when configured untested is above actual untested", func() {
 			withFakeGo("echo header > coverage.out; echo foo:1.2,1.3 0 >> coverage.out; echo foo:2.2,2.3 0 >> coverage.out", func() {
 				withFakeGoPath(func(goPath string) {
 					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 3\n")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{0, "", "foo has less uncovered sections (2 current vs 3 configured), decrement configured uncovered?\n"},
+						[]interface{}{0, "", "foo has less untested sections (2 current vs 3 configured), decrement configured untested?\n"},
 					)
 				})
 			})
@@ -228,7 +228,7 @@ var _ = Describe("go-testcov", func() {
 					writeFile("baz.go", "// untested sections: 3\n")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{0, "", "baz.go has less uncovered sections (2 current vs 3 configured), decrement configured uncovered?\n"},
+						[]interface{}{0, "", "baz.go has less untested sections (2 current vs 3 configured), decrement configured untested?\n"},
 					)
 				})
 			})
@@ -240,7 +240,7 @@ var _ = Describe("go-testcov", func() {
 					writeFile("baz.go", "// untested sections: 3\n")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{0, "", "baz.go has less uncovered sections (2 current vs 3 configured), decrement configured uncovered?\n"},
+						[]interface{}{0, "", "baz.go has less untested sections (2 current vs 3 configured), decrement configured untested?\n"},
 					)
 				})
 			})
@@ -252,7 +252,7 @@ var _ = Describe("go-testcov", func() {
 					writeFile("baz.go", "// untested sections: 3\n")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{0, "", "baz.go has less uncovered sections (2 current vs 3 configured), decrement configured uncovered?\n"},
+						[]interface{}{0, "", "baz.go has less untested sections (2 current vs 3 configured), decrement configured untested?\n"},
 					)
 				})
 			})
@@ -281,44 +281,44 @@ var _ = Describe("go-testcov", func() {
 		})
 	})
 
-	Describe("uncoveredSections", func() {
+	Describe("untestedSections", func() {
 		It("shows nothing for empty", func() {
 			withTempFile("", func(file *os.File) {
-				Expect(uncoveredSections(file.Name())).To(Equal([]Section{}))
+				Expect(untestedSections(file.Name())).To(Equal([]Section{}))
 			})
 		})
 
-		It("shows uncovered", func() {
+		It("shows untested", func() {
 			withTempFile("mode: set\nfoo/pkg.go:1.2,3.4 1 0\n", func(file *os.File) {
-				Expect(uncoveredSections(file.Name())).To(Equal([]Section{{"foo/pkg.go", 1, 2, 3, 4, 100002}}))
+				Expect(untestedSections(file.Name())).To(Equal([]Section{{"foo/pkg.go", 1, 2, 3, 4, 100002}}))
 			})
 		})
 
 		It("does not show covered", func() {
 			withTempFile("mode: set\nfoo/pkg.go:1.2,3.4 1 1\n", func(file *os.File) {
-				Expect(uncoveredSections(file.Name())).To(Equal([]Section{}))
+				Expect(untestedSections(file.Name())).To(Equal([]Section{}))
 			})
 		})
 
 		It("does not show covered even if coverage ends in 0", func() {
 			withTempFile("mode: set\nfoo/pkg.go:1.2,3.4 1 10\n", func(file *os.File) {
-				Expect(uncoveredSections(file.Name())).To(Equal([]Section{}))
+				Expect(untestedSections(file.Name())).To(Equal([]Section{}))
 			})
 		})
 	})
 
-	Describe("configuredUncovered", func() {
+	Describe("configuredUntested", func() {
 		It("returns 0 when not configured", func() {
 			inTempDir(func() {
 				writeFile(joinPath("foo"), "")
-				Expect(configuredUncovered("foo")).To(Equal(0))
+				Expect(configuredUntested("foo")).To(Equal(0))
 			})
 		})
 
 		It("returns number when configured", func() {
 			inTempDir(func() {
 				writeFile("foo", "// untested sections: 12")
-				Expect(configuredUncovered("foo")).To(Equal(12))
+				Expect(configuredUntested("foo")).To(Equal(12))
 			})
 		})
 	})

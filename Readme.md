@@ -1,10 +1,10 @@
 # go-testcov [![Test](https://github.com/grosser/go-testcov/actions/workflows/test.yml/badge.svg)](https://github.com/grosser/go-testcov/actions?query=branch%3Amaster) [![coverage](https://img.shields.io/badge/coverage-100%25-success.svg)](https://github.com/grosser/go-testcov)
 
-`go test` that fails on uncovered lines and shows them
+`go test` that fails on untested lines and shows them
 
  - 🎉 Instant, actionable feedback on 💚 test run
  - 🎉 Onboard legacy code with top of the file `// untested sections: 5` comment 
- - 🎉 Mark uncovered code sections with inline `// untested section` comment
+ - 🎉 Mark untested code sections with inline `// untested section` comment
  - 🚫 PRs with bad test coverage
  - 🚫 External/paid coverage tools
 
@@ -14,7 +14,7 @@ go-testcov . # same arguments as `go test` uses
 ...
 test output
 ...
-pkg.go new uncovered sections introduced (1 current vs 0 configured)
+pkg.go new untested sections introduced (1 current vs 0 configured)
 pkg.go:20.14,21.11
 pkg.go:54.5,56.5
 ```

@@ -73,15 +73,15 @@ func runGoTestWithCoverage(argv []string, coveragePath string) (exitCode int) {
 
 // Tests passed, so let's check coverage for each path that has coverage
 func checkCoverage(coveragePath string) (exitCode int) {
-	uncoveredSections := uncoveredSections(coveragePath)
-	pathSections := groupSectionsByPath(uncoveredSections)
+	untestedSections := untestedSections(coveragePath)
+	pathSections := groupSectionsByPath(untestedSections)
 	wd, err := os.Getwd()
 	check(err)
 
 	iterateSorted(pathSections, func(path string, sections []Section) {
 		// remove package prefix like "github.com/user/lib", but cache the call to os.Getwd
 		displayPath, readPath := normalizeModulePath(path, wd)
-		configured := configuredUncovered(readPath)
+		configured := configuredUntested(readPath)
 		content := strings.Split(readFile(readPath), "\n")
 		sections = filterSectionsIgnoredInline(sections, content)
 		current := len(sections)
@@ -94,7 +94,7 @@ func checkCoverage(coveragePath string) (exitCode int) {
 
 		if current > configured {
 			// TODO: color when tty
-			_, _ = fmt.Fprintf(os.Stderr, "%v new uncovered sections introduced %v\n", displayPath, details)
+			_, _ = fmt.Fprintf(os.Stderr, "%v new untested sections introduced %v\n", displayPath, details)
 
 			// sort sections since go does not
 			sort.Slice(sections, func(i, j int) bool {
@@ -108,7 +108,7 @@ func checkCoverage(coveragePath string) (exitCode int) {
 
 			exitCode = 1
 		} else {
-			_, _ = fmt.Fprintf(os.Stderr, "%v has less uncovered sections %v, decrement configured uncovered?\n", displayPath, details)
+			_, _ = fmt.Fprintf(os.Stderr, "%v has less untested sections %v, decrement configured untested?\n", displayPath, details)
 		}
 	})
 	return
@@ -147,8 +147,8 @@ func groupSectionsByPath(sections []Section) (grouped map[string][]Section) {
 	return
 }
 
-// Find the uncovered sections given a coverage path
-func uncoveredSections(coverageFilePath string) (sections []Section) {
+// Find the untested sections given a coverage path
+func untestedSections(coverageFilePath string) (sections []Section) {
 	sections = []Section{}
 	content := readFile(coverageFilePath)
 
@@ -210,9 +210,9 @@ func normalizeModulePath(path string, workingDirectory string) (displayPath stri
 	return path, goPrefixedPath
 }
 
-// How many sections are expected to be uncovered, 0 if not configured
+// How many sections are expected to be untested, 0 if not configured
 // TODO: return an error when the file does not exist and handle that gracefully in the caller
-func configuredUncovered(path string) (count int) {
+func configuredUntested(path string) (count int) {
 	content := readFile(path)
 	regex := regexp.MustCompile("// *untested sections: *([0-9]+)")
 	match := regex.FindStringSubmatch(content)
