@@ -71,6 +71,11 @@ func runGoTestWithCoverage(argv []string, coveragePath string) (exitCode int) {
 	return runCommand("go", argv...)
 }
 
+func ignoreGeneratedFiles(path string) bool {
+	matched, _ := regexp.MatchString("\\/*generated.*\\.go$", path)
+	return matched
+}
+
 // Tests passed, so let's check coverage for each path that has coverage
 func checkCoverage(coveragePath string) (exitCode int) {
 	untestedSections := untestedSections(coveragePath)
@@ -79,6 +84,10 @@ func checkCoverage(coveragePath string) (exitCode int) {
 	check(err)
 
 	iterateSorted(pathSections, func(path string, sections []Section) {
+
+		if ignoreGeneratedFiles(path){
+			return 
+		}
 		// remove package prefix like "github.com/user/lib", but cache the call to os.Getwd
 		displayPath, readPath := normalizeModulePath(path, wd)
 		configured := configuredUntested(readPath)
