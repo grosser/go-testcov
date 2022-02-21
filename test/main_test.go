@@ -1,9 +1,10 @@
 package main
 
 import (
+	"os"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"os"
 )
 
 var _ = Describe("go-testcov", func() {
@@ -102,8 +103,8 @@ var _ = Describe("go-testcov", func() {
 			})
 		})
 
-		It("fails when coverage is not ok and skipped generated files", func() {
-			withFakeGo("echo header > coverage.out; echo foo:1.2,1.3 0 >> coverage.out; echo generated.go:1.21.3 0 >> coverage.out" , func() {
+		It("does not show generated files when failing", func() {
+			withFakeGo("echo header > coverage.out; echo foo:1.2,1.3 0 >> coverage.out; echo generated.go:1.21.3 0 >> coverage.out", func() {
 				writeFile("foo", "")
 				writeFile("generated.go", "")
 				expectCommand(
@@ -113,7 +114,7 @@ var _ = Describe("go-testcov", func() {
 			})
 		})
 
-		It("passes when generated file is ignored", func() {
+		It("ignores generated files", func() {
 			withFakeGo("echo header > coverage.out; echo generated.go:1.2,1.3 0 >> coverage.out", func() {
 				writeFile("generated.go", "test est")
 				expectCommand(
@@ -342,16 +343,5 @@ var _ = Describe("go-testcov", func() {
 				Expect(configuredUntested("foo")).To(Equal(12))
 			})
 		})
-	})
-
-	Describe("ignoreGeneratedFiles", func() {
-		It("returns true if it is a generated file", func() {
-			Expect(ignoreGeneratedFiles("zz_generated.deepcopy.go")).To(BeTrue())
-		})
-
-		It("returns false if it is not a generated file", func() {
-			Expect(ignoreGeneratedFiles("foo.go")).To(BeFalse())
-		})
-
 	})
 })

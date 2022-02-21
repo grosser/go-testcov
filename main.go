@@ -24,6 +24,7 @@ type Section struct {
 
 var inlineIgnore = regexp.MustCompile("//.*untested section(\\s|,|$)")
 var startInlineIgnore = regexp.MustCompile("^\\s*//.*untested section(\\s|,|$)")
+var generatedFile = regexp.MustCompile("/*generated.*\\.go$")
 
 // covert raw coverage line into a section github.com/foo/bar/baz.go:1.2,3.5 1 0
 func NewSection(raw string) Section {
@@ -71,11 +72,6 @@ func runGoTestWithCoverage(argv []string, coveragePath string) (exitCode int) {
 	return runCommand("go", argv...)
 }
 
-func ignoreGeneratedFiles(path string) bool {
-	matched, _ := regexp.MatchString("\\/*generated.*\\.go$", path)
-	return matched
-}
-
 // Tests passed, so let's check coverage for each path that has coverage
 func checkCoverage(coveragePath string) (exitCode int) {
 	untestedSections := untestedSections(coveragePath)
@@ -84,8 +80,7 @@ func checkCoverage(coveragePath string) (exitCode int) {
 	check(err)
 
 	iterateSorted(pathSections, func(path string, sections []Section) {
-
-		if ignoreGeneratedFiles(path) {
+		if generatedFile.MatchString(path) {
 			return
 		}
 		// remove package prefix like "github.com/user/lib", but cache the call to os.Getwd
