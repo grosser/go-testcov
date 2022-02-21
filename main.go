@@ -85,8 +85,8 @@ func checkCoverage(coveragePath string) (exitCode int) {
 
 	iterateSorted(pathSections, func(path string, sections []Section) {
 
-		if ignoreGeneratedFiles(path){
-			return 
+		if ignoreGeneratedFiles(path) {
+			return
 		}
 		// remove package prefix like "github.com/user/lib", but cache the call to os.Getwd
 		displayPath, readPath := normalizeModulePath(path, wd)
