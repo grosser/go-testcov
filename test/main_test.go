@@ -102,6 +102,27 @@ var _ = Describe("go-testcov", func() {
 			})
 		})
 
+		It("fails when coverage is not ok and skipped generated files", func() {
+			withFakeGo("echo header > coverage.out; echo foo:1.2,1.3 0 >> coverage.out; echo generated.go:1.21.3 0 >> coverage.out" , func() {
+				writeFile("foo", "")
+				writeFile("generated.go", "")
+				expectCommand(
+					runGoTestWithCoverage,
+					[]interface{}{1, "", "foo new untested sections introduced (1 current vs 0 configured)\nfoo:1.2,1.3\n"},
+				)
+			})
+		})
+
+		It("passes when generated file is ignored", func() {
+			withFakeGo("echo header > coverage.out; echo generated.go:1.2,1.3 0 >> coverage.out", func() {
+				writeFile("generated.go", "test est")
+				expectCommand(
+					runGoTestWithCoverage,
+					[]interface{}{0, "", ""},
+				)
+			})
+		})
+
 		It("fails when configured untested is below actual untested", func() {
 			withFakeGo("echo header > coverage.out; echo foo:2.2,2.3 0 >> coverage.out; echo foo:1.2,1.3 0 >> coverage.out", func() {
 				withFakeGoPath(func(goPath string) {
@@ -321,5 +342,16 @@ var _ = Describe("go-testcov", func() {
 				Expect(configuredUntested("foo")).To(Equal(12))
 			})
 		})
+	})
+
+	Describe("ignoreGeneratedFiles", func() {
+		It("returns true if it is a generated file", func() {
+			Expect(ignoreGeneratedFiles("zz_generated.deepcopy.go")).To(BeTrue())
+		})
+
+		It("returns false if it is not a generated file", func() {
+			Expect(ignoreGeneratedFiles("foo.go")).To(BeFalse())
+		})
+
 	})
 })
