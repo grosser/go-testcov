@@ -175,9 +175,9 @@ func untestedSections(coverageFilePath string) (sections []Section) {
 }
 
 func normalizeModulePath(path string, workingDirectory string) (displayPath string, readPath string) {
-	modulePrefixSize := 3 // foo.com/bar/baz + file.go
 	separator := string(os.PathSeparator)
-	parts := strings.SplitN(path, separator, modulePrefixSize+1)
+	parts := strings.Split(path, separator)
+	modulePrefixSize := len(parts) - 1
 	goPath, hasGoPath := os.LookupEnv("GOPATH")
 	inGoPath := false
 	goPrefixedPath := joinPath(goPath, "src", path)
