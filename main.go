@@ -83,11 +83,11 @@ func checkCoverage(coveragePath string) (exitCode int) {
 		if generatedFile.MatchString(path) {
 			return
 		}
-		// remove package prefix like "github.com/user/lib", but cache the call to os.Getwd
+
 		displayPath, readPath := normalizeModulePath(path, wd)
-		configured := configuredUntested(readPath)
+		configured, configuredAtLine := configuredUntested(readPath)
 		content := strings.Split(readFile(readPath), "\n")
-		sections = filterSectionsIgnoredInline(sections, content)
+		sections = removeSectionsMarkedWithInlineComment(sections, content)
 		current := len(sections)
 
 		if current == configured {
@@ -112,16 +112,20 @@ func checkCoverage(coveragePath string) (exitCode int) {
 
 			exitCode = 1
 		} else {
-			_, _ = fmt.Fprintf(os.Stderr, "%v has less untested sections %v, decrement configured untested?\n", displayPath, details)
+			_, _ = fmt.Fprintf(
+				os.Stderr,
+				"%v has less untested sections %v, decrement configured untested?\nconfigured on: %v:%v",
+				displayPath, details, readPath, configuredAtLine)
 		}
 	})
 	return
 }
 
-// keep sections that are marked with "untested section" comment
+// keep untested sections that are marked with "untested section" comment
 // need to be careful to not change the list while iterating, see https://pauladamsmith.com/blog/2016/07/go-modify-slice-iteration.html
 // NOTE: this is a bit rough as it does not account for partial lines via start/end characters
-func filterSectionsIgnoredInline(sections []Section, content []string) []Section {
+// TODO: warn about sections that have a comment but are not uncovered
+func removeSectionsMarkedWithInlineComment(sections []Section, content []string) []Section {
 	uncheckedSections := sections
 	sections = []Section{}
 	for _, section := range uncheckedSections {
@@ -174,6 +178,7 @@ func untestedSections(coverageFilePath string) (sections []Section) {
 	return
 }
 
+// remove package prefix like "github.com/user/lib", but cache the call to os.Get
 func normalizeModulePath(path string, workingDirectory string) (displayPath string, readPath string) {
 	modulePrefixSize := 3 // foo.com/bar/baz + file.go
 	separator := string(os.PathSeparator)
@@ -216,13 +221,15 @@ func normalizeModulePath(path string, workingDirectory string) (displayPath stri
 
 // How many sections are expected to be untested, 0 if not configured
 // TODO: return an error when the file does not exist and handle that gracefully in the caller
-func configuredUntested(path string) (count int) {
+func configuredUntested(path string) (count int, lineNumber int) {
 	content := readFile(path)
 	regex := regexp.MustCompile("// *untested sections: *([0-9]+)")
 	match := regex.FindStringSubmatch(content)
 	if len(match) == 2 {
-		return stringToInt(match[1])
+		index := regex.FindStringIndex(content)[0]
+		lineNumber = strings.Count(content[0:index], "\n") + 1
+		return stringToInt(match[1]), lineNumber
 	} else {
-		return 0
+		return 0, 0
 	}
 }

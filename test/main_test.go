@@ -202,7 +202,11 @@ var _ = Describe("go-testcov", func() {
 					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 2\nfoo// untested section\nbar\n")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{0, "", "foo has less untested sections (1 current vs 2 configured), decrement configured untested?\n"},
+						[]interface{}{
+							0,
+							"",
+							"foo has less untested sections (1 current vs 2 configured), decrement configured untested?\nconfigured on: " + joinPath(goPath, "src", "foo") + ":1",
+						},
 					)
 				})
 			})
@@ -238,7 +242,11 @@ var _ = Describe("go-testcov", func() {
 					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 3\n")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{0, "", "foo has less untested sections (2 current vs 3 configured), decrement configured untested?\n"},
+						[]interface{}{
+							0,
+							"",
+							"foo has less untested sections (2 current vs 3 configured), decrement configured untested?\nconfigured on: " + joinPath(goPath, "src", "foo") + ":1",
+						},
 					)
 				})
 			})
@@ -250,7 +258,7 @@ var _ = Describe("go-testcov", func() {
 					writeFile("baz.go", "// untested sections: 3\n")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{0, "", "baz.go has less untested sections (2 current vs 3 configured), decrement configured untested?\n"},
+						[]interface{}{0, "", "baz.go has less untested sections (2 current vs 3 configured), decrement configured untested?\nconfigured on: baz.go:1"},
 					)
 				})
 			})
@@ -262,7 +270,7 @@ var _ = Describe("go-testcov", func() {
 					writeFile("baz.go", "// untested sections: 3\n")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{0, "", "baz.go has less untested sections (2 current vs 3 configured), decrement configured untested?\n"},
+						[]interface{}{0, "", "baz.go has less untested sections (2 current vs 3 configured), decrement configured untested?\nconfigured on: baz.go:1"},
 					)
 				})
 			})
@@ -274,7 +282,7 @@ var _ = Describe("go-testcov", func() {
 					writeFile("baz.go", "// untested sections: 3\n")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{0, "", "baz.go has less untested sections (2 current vs 3 configured), decrement configured untested?\n"},
+						[]interface{}{0, "", "baz.go has less untested sections (2 current vs 3 configured), decrement configured untested?\nconfigured on: baz.go:1"},
 					)
 				})
 			})
@@ -330,17 +338,30 @@ var _ = Describe("go-testcov", func() {
 	})
 
 	Describe("configuredUntested", func() {
-		It("returns 0 when not configured", func() {
+		It("returns 0,0 when not configured", func() {
 			inTempDir(func() {
 				writeFile(joinPath("foo"), "")
-				Expect(configuredUntested("foo")).To(Equal(0))
+				count, lineNumber := configuredUntested("foo")
+				Expect(count).To(Equal(0))
+				Expect(lineNumber).To(Equal(0))
 			})
 		})
 
-		It("returns number when configured", func() {
+		It("returns number of untested and line number of comment when configured", func() {
 			inTempDir(func() {
 				writeFile("foo", "// untested sections: 12")
-				Expect(configuredUntested("foo")).To(Equal(12))
+				count, lineNumber := configuredUntested("foo")
+				Expect(count).To(Equal(12))
+				Expect(lineNumber).To(Equal(1))
+			})
+		})
+
+		It("returns number of untested and line number of comment when configured with multiple lines", func() {
+			inTempDir(func() {
+				writeFile("foo", "... bork ... \n // untested sections: 12 \n ... bork ...")
+				count, lineNumber := configuredUntested("foo")
+				Expect(count).To(Equal(12))
+				Expect(lineNumber).To(Equal(2))
 			})
 		})
 	})
