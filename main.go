@@ -178,6 +178,20 @@ func untestedSections(coverageFilePath string) (sections []Section) {
 	return
 }
 
+// find relative path of file in current directory
+func findFile(path string) (readPath string) {
+	parts := strings.Split(path, string(os.PathSeparator))
+	for len(parts) > 0 {
+		_, err := os.Stat(strings.Join(parts, string(os.PathSeparator)))
+		if err != nil {
+			parts = parts[1:] // shift directory to continue to look for file
+		} else {
+			break
+		}
+	}
+	return strings.Join(parts, string(os.PathSeparator))
+}
+
 // remove package prefix like "github.com/user/lib", but cache the call to os.Get
 func normalizeModulePath(path string, workingDirectory string) (displayPath string, readPath string) {
 	modulePrefixSize := 3 // foo.com/bar/baz + file.go
@@ -203,7 +217,7 @@ func normalizeModulePath(path string, workingDirectory string) (displayPath stri
 	}
 
 	prefix := strings.Join(parts[:modulePrefixSize], separator)
-	demodularized := strings.SplitN(path, prefix+separator, 2)[1]
+	demodularized := findFile(strings.SplitN(path, prefix+separator, 2)[1])
 
 	// folder is not in go path ... remove module nesting
 	if !inGoPath {
