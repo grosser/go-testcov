@@ -58,8 +58,8 @@ func readFile(path string) (content string) {
 	return string(data)
 }
 
-// iterate a map by going through it via by it's sorted keys
-func iterateSorted(data map[string][]Section, fn func(string, []Section)) {
+// iterate a map by it's sorted keys
+func iterateBySortedKey(data map[string][]Section, fn func(string, []Section)) {
 	keys := make([]string, len(data))
 	i := 0
 	for k := range data {

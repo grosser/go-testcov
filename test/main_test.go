@@ -35,8 +35,8 @@ var _ = Describe("go-testcov", func() {
 	})
 
 	// TODO: use AroundEach to run everything inside of a tempdir https://github.com/onsi/ginkgo/issues/481
-	Describe("goTestCheckCoverage", func() {
-		runGoTestWithCoverage := func() int { return goTestCheckCoverage([]string{"hello", "world"}) }
+	Describe("runGoTestAndCheckCoverage", func() {
+		runGoTestWithCoverage := func() int { return runGoTestAndCheckCoverage([]string{"hello", "world"}) }
 		withFailingTestInGoPath := func(fn func()) {
 			withFakeGo("echo header > coverage.out; echo foo.com/bar/baz/foo2.go:1.2,1.3 0 >> coverage.out", func() {
 				withFakeGoPath(func(goPath string) {
@@ -302,7 +302,7 @@ var _ = Describe("go-testcov", func() {
 		It("keeps coverage.out when requested", func() {
 			withFakeGo("touch coverage.out\necho 1", func() {
 				expectCommand(
-					func() int { return goTestCheckCoverage([]string{"hello", "world", "-cover"}) },
+					func() int { return runGoTestAndCheckCoverage([]string{"hello", "world", "-cover"}) },
 					[]interface{}{0, "1\n", ""},
 				)
 				_, err := os.Stat("coverage.out")
@@ -337,11 +337,11 @@ var _ = Describe("go-testcov", func() {
 		})
 	})
 
-	Describe("configuredUntested", func() {
+	Describe("configuredUntestedForFile", func() {
 		It("returns 0,0 when not configured", func() {
 			inTempDir(func() {
 				writeFile(joinPath("foo"), "")
-				count, lineNumber := configuredUntested("foo")
+				count, lineNumber := configuredUntestedForFile("foo")
 				Expect(count).To(Equal(0))
 				Expect(lineNumber).To(Equal(0))
 			})
@@ -350,7 +350,7 @@ var _ = Describe("go-testcov", func() {
 		It("returns number of untested and line number of comment when configured", func() {
 			inTempDir(func() {
 				writeFile("foo", "// untested sections: 12")
-				count, lineNumber := configuredUntested("foo")
+				count, lineNumber := configuredUntestedForFile("foo")
 				Expect(count).To(Equal(12))
 				Expect(lineNumber).To(Equal(1))
 			})
@@ -359,7 +359,7 @@ var _ = Describe("go-testcov", func() {
 		It("returns number of untested and line number of comment when configured with multiple lines", func() {
 			inTempDir(func() {
 				writeFile("foo", "... bork ... \n // untested sections: 12 \n ... bork ...")
-				count, lineNumber := configuredUntested("foo")
+				count, lineNumber := configuredUntestedForFile("foo")
 				Expect(count).To(Equal(12))
 				Expect(lineNumber).To(Equal(2))
 			})

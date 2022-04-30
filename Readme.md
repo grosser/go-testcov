@@ -38,7 +38,9 @@ cd test
 go-testcov
 ```
 
-all tests are in `test/` so the main library does not force installation of gomega + ginkgo
+- all tests are in `test/` so the main library does not force installation of gomega + ginkgo
+- the files from the root folder are symlinked there to make everything load
+- easiest to work from that folder directly
 
 
 Author
