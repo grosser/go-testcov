@@ -2,11 +2,11 @@
 
 `go test` that fails on untested lines and shows them
 
- - 🎉 Instant, actionable feedback on 💚 test run
- - 🎉 Onboard legacy code with top of the file `// untested sections: 5` comment 
- - 🎉 Mark untested code sections with inline `// untested section` comment
- - 🚫 PRs with bad test coverage
- - 🚫 External/paid coverage tools
+ - 🎉 **Instant** and **actionable** feedback on 💚 test run
+ - 🚀 Fast PRs: avoid comments and CI failures
+ - 💰 No 3rd-party payment / integration / security-leaks 
+ - Highlight untested code sections with inline `// untested section` comment
+ - Onboard untested code (top of the file `// untested sections: 5` comment)
 
 ```
 go get github.com/grosser/go-testcov
@@ -14,7 +14,7 @@ go-testcov . # same arguments as `go test` uses, so for example `go-testcov ./..
 ...
 test output
 ...
-pkg.go new untested sections introduced (1 current vs 0 configured)
+pkg.go new untested sections introduced (2 current vs 0 configured)
 pkg.go:20.14,21.11
 pkg.go:54.5,56.5
 ```
@@ -22,10 +22,54 @@ pkg.go:54.5,56.5
 
 ## Notes
 
- - [coverage in go](https://blog.golang.org/cover)
+ - Docs for [coverage in go](https://blog.golang.org/cover)
  - Runtime overhead for coverage is about 3%
  - Use `-covermode atomic` when testing parallel algorithms
  - To keep the `coverage.out` file run with `-cover`
+
+
+## Architecture
+
+### Execution
+
+```mermaid
+graph TD;
+GoTestCov(go-testcov .)
+GoTest(go test . -cover --coverprofile coverage.out)
+Coverage(coverage.out)
+GoTestCov--runs-->GoTest;
+GoTest--produces-->Coverage;
+GoTestCov--parses-->Coverage;
+```
+
+`coverage.out` shows the coverage of each file "section".
+
+### Section
+
+A "section" is a chunk of uninterrupted code, for example:
+
+```go
+func main() {
+  if foo(1) {
+      fmt.Print("Hi")
+  }
+  fmt.Print("Ho")
+}
+```
+
+has 3 sections:
+```
+github.com/foo/bar/main.go:1.13,2.13 1 1
+github.com/foo/bar/main.go:2.13,3.4 1 1
+github.com/foo/bar/main.go:5.3,5.18 1 1
+```
+
+1. `1.13,2.13`: after opening `main() {` until after `if foo(1) {`
+2. `2.13,3.4`: after `if foo(1) {` until after `if` closing `}`
+3. `5.3,5.18`: `fmt.Print("Ho")`
+
+- the `else` case (aka "what if foo(1) returns false") has no coverage information
+- when not using modules the path is `/full/path/to/main.go`
 
 
 ## Development

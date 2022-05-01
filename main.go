@@ -11,7 +11,7 @@ import (
 // reused regex
 var inlineIgnore = "//.*untested section(\\s|,|$)"
 var anyInlineIgnore = regexp.MustCompile(inlineIgnore)
-var startsWithInlineIgnore = regexp.MustCompile("^\\s*"+inlineIgnore)
+var startsWithInlineIgnore = regexp.MustCompile("^\\s*" + inlineIgnore)
 var perFileIgnore = regexp.MustCompile("// *untested sections: *([0-9]+)")
 var generatedFile = regexp.MustCompile("/*generated.*\\.go$")
 
@@ -45,22 +45,22 @@ func runGoTestAndCheckCoverage(argv []string) (exitCode int) {
 	return checkCoverage(coveragePath)
 }
 
-// check coverage for each package that has coverage
+// check coverage for each path that has coverage
 func checkCoverage(coverageFilePath string) (exitCode int) {
 	exitCode = 0
 	untestedSections := untestedSections(coverageFilePath)
-	sectionsByPkg := groupSectionsByPkg(untestedSections)
+	sectionsByPath := groupSectionsByPath(untestedSections)
 
 	wd, err := os.Getwd()
 	check(err)
 
-	iterateBySortedKey(sectionsByPkg, func(pkg string, sections []Section) {
+	iterateBySortedKey(sectionsByPath, func(path string, sections []Section) {
 		// skip generated files since their coverage does not matter and would often have gaps
-		if generatedFile.MatchString(pkg) {
+		if generatedFile.MatchString(path) {
 			return
 		}
 
-		displayPath, readPath := normalizePkgPath(pkg, wd)
+		displayPath, readPath := normalizeCoveredPath(path, wd)
 		configuredUntested, configuredUntestedAtLine := configuredUntestedForFile(readPath)
 		lines := strings.Split(readFile(readPath), "\n")
 		sections = removeSectionsMarkedWithInlineComment(sections, lines)
@@ -119,15 +119,15 @@ func removeSectionsMarkedWithInlineComment(sections []Section, lines []string) [
 	return sections
 }
 
-func groupSectionsByPkg(sections []Section) (grouped map[string][]Section) {
+func groupSectionsByPath(sections []Section) (grouped map[string][]Section) {
 	grouped = map[string][]Section{}
 	for _, section := range sections {
-		pkg := section.pkg
-		group, ok := grouped[pkg]
+		path := section.path
+		group, ok := grouped[path]
 		if !ok {
-			grouped[pkg] = []Section{}
+			grouped[path] = []Section{}
 		}
-		grouped[pkg] = append(group, section)
+		grouped[path] = append(group, section)
 	}
 	return
 }
@@ -169,8 +169,8 @@ func findFile(path string) (readPath string) {
 	return strings.Join(parts, string(os.PathSeparator))
 }
 
-// remove package prefix like "github.com/user/lib", but cache the call to os.Get
-func normalizePkgPath(path string, workingDirectory string) (displayPath string, readPath string) {
+// remove path prefix like "github.com/user/lib", but cache the call to os.Get
+func normalizeCoveredPath(path string, workingDirectory string) (displayPath string, readPath string) {
 	modulePrefixSize := 3 // foo.com/bar/baz + file.go
 	separator := string(os.PathSeparator)
 	parts := strings.SplitN(path, separator, modulePrefixSize+1)

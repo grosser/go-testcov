@@ -8,7 +8,7 @@ import (
 
 // Section represents a line as produced by `go test`
 type Section struct {
-	pkg       string
+	path      string
 	startLine int
 	startChar int
 	endLine   int
@@ -16,11 +16,11 @@ type Section struct {
 	sortValue int
 }
 
-// NewSection parses a coverage line as produces by `go test`, for example "github.com/foo/bar/baz.go:1.2,3.5 1 0"
+// NewSection parses a coverage line as produces by `go test`, for example "foo/bar.go:1.2,3.5 1 0"
 func NewSection(line string) Section {
 	// parse which package was covered
 	fileAndLocation := strings.SplitN(line, ":", 2)
-	pkg := fileAndLocation[0]
+	path := fileAndLocation[0]
 	location := fileAndLocation[1]
 
 	// parse where the coverage starts and ends
@@ -30,10 +30,10 @@ func NewSection(line string) Section {
 	endLine := stringToInt(locations[2])
 	endChar := stringToInt(locations[3])
 
-	// allow sorting multiple sections from the same pkg
+	// allow sorting multiple sections from the same path
 	sortValue := startLine*100000 + startChar
 
-	return Section{pkg, startLine, startChar, endLine, endChar, sortValue}
+	return Section{path, startLine, startChar, endLine, endChar, sortValue}
 }
 
 func (s Section) Location() string {
