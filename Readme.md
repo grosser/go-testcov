@@ -7,6 +7,7 @@
  - 💰 No 3rd-party payment / integration / security-leaks 
  - Highlight untested code sections with inline `// untested section` comment
  - Onboard untested code (top of the file `// untested sections: 5` comment)
+ - Ignore untested files (top of the file `// untested sections: ignore` comment)
 
 ```
 go get github.com/grosser/go-testcov
@@ -40,13 +41,13 @@ LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 GOTESTCOV ?= $(LOCALBIN)/go-testcov
-GOTESTCOV_VERSION ?= v1.8.0
+GOTESTCOV_VERSION ?= v1.9.0
 
 .PHONY: go-testcov
 go-testcov: $(LOCALBIN) # Download go-testcov (replace existing if incorrect version)
-	@(test -f $(GOTESTCOV) && $(GOTESTCOV) version | grep " $(GOTESTCOV_VERSION) " >/dev/null) || \
+	@(test -f $(GOTESTCOV) && $(GOTESTCOV) version | grep "$(GOTESTCOV_VERSION)" >/dev/null) || \
 	(rm -f $(GOTESTCOV) && echo "Installing $(GOTESTCOV) $(GOTESTCOV_VERSION)" && \
-	GOBIN=$(LOCALBIN) go install github.com/grosser/go-testcov@$(GOTESTCOV_VERSION)
+	GOBIN=$(LOCALBIN) go install github.com/grosser/go-testcov@$(GOTESTCOV_VERSION))
 ```
 
 ## Architecture
