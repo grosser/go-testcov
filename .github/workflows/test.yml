@@ -8,7 +8,7 @@ jobs:
   test:
     strategy:
       matrix:
-        go: ["1.19", "1.18", "1.17"]
+        go: ["1.22", "1.21", "1.20", "1.19"] # keep in sync with go.mod and test/go.mod
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-go@v2
