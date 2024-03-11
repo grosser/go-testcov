@@ -8,13 +8,13 @@ import (
 	"strings"
 )
 
-const version = "v1.8.0"
+const version = "v1.9.0"
 
 // reused regex
 var inlineIgnore = "//.*untested section(\\s|,|$)"
 var anyInlineIgnore = regexp.MustCompile(inlineIgnore)
 var startsWithInlineIgnore = regexp.MustCompile("^\\s*" + inlineIgnore)
-var perFileIgnore = regexp.MustCompile("// *untested sections: *([0-9]+)")
+var perFileIgnore = regexp.MustCompile("// *untested sections: *(\\S+)")
 var generatedFile = regexp.MustCompile("/*generated.*\\.go$")
 
 // test injection point to enable test coverage of exit behavior
@@ -70,13 +70,13 @@ func checkCoverage(coverageFilePath string) (exitCode int) {
 		}
 
 		displayPath, readPath := normalizeCoveredPath(path, wd)
-		configuredUntested, configuredUntestedAtLine := configuredUntestedForFile(readPath)
+		configuredUntested, ignoreUntested, configuredUntestedAtLine := configuredUntestedForFile(readPath)
 		lines := strings.Split(readFile(readPath), "\n")
 		sections = removeSectionsMarkedWithInlineComment(sections, lines)
 		actualUntested := len(sections)
 		details := fmt.Sprintf("(%v current vs %v configured)", actualUntested, configuredUntested)
 
-		if actualUntested == configuredUntested {
+		if ignoreUntested || actualUntested == configuredUntested {
 			// exactly as much as we expected, nothing to do
 		} else if actualUntested > configuredUntested {
 			printUntestedSections(sections, displayPath, details)
@@ -219,15 +219,19 @@ func normalizeCoveredPath(path string, workingDirectory string) (displayPath str
 }
 
 // How many sections are expected to be untested, 0 if not configured
-// also return at what line we found the comment so we can point the user to it
-func configuredUntestedForFile(path string) (count int, lineNumber int) {
+// also return at what line we found the comment, so we can point the user to it
+func configuredUntestedForFile(path string) (count int, ignore bool, lineNumber int) {
 	content := readFile(path)
 	match := perFileIgnore.FindStringSubmatch(content)
 	if len(match) == 2 {
 		index := perFileIgnore.FindStringIndex(content)[0]
 		linesBeforeMatch := strings.Count(content[0:index], "\n")
-		return stringToInt(match[1]), linesBeforeMatch + 1
+		if match[1] == "ignore" {
+			return 0, true, linesBeforeMatch + 1
+		} else {
+			return stringToInt(match[1]), false, linesBeforeMatch + 1
+		}
 	} else {
-		return 0, 0
+		return 0, false, 0
 	}
 }

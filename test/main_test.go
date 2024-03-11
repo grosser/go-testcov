@@ -353,8 +353,9 @@ var _ = Describe("go-testcov", func() {
 		It("returns 0,0 when not configured", func() {
 			inTempDir(func() {
 				writeFile(joinPath("foo"), "")
-				count, lineNumber := configuredUntestedForFile("foo")
+				count, ignore, lineNumber := configuredUntestedForFile("foo")
 				Expect(count).To(Equal(0))
+				Expect(ignore).To(Equal(false))
 				Expect(lineNumber).To(Equal(0))
 			})
 		})
@@ -362,8 +363,9 @@ var _ = Describe("go-testcov", func() {
 		It("returns number of untested and line number of comment when configured", func() {
 			inTempDir(func() {
 				writeFile("foo", "// untested sections: 12")
-				count, lineNumber := configuredUntestedForFile("foo")
+				count, ignore, lineNumber := configuredUntestedForFile("foo")
 				Expect(count).To(Equal(12))
+				Expect(ignore).To(Equal(false))
 				Expect(lineNumber).To(Equal(1))
 			})
 		})
@@ -371,8 +373,19 @@ var _ = Describe("go-testcov", func() {
 		It("returns number of untested and line number of comment when configured with multiple lines", func() {
 			inTempDir(func() {
 				writeFile("foo", "... bork ... \n // untested sections: 12 \n ... bork ...")
-				count, lineNumber := configuredUntestedForFile("foo")
+				count, ignore, lineNumber := configuredUntestedForFile("foo")
 				Expect(count).To(Equal(12))
+				Expect(ignore).To(Equal(false))
+				Expect(lineNumber).To(Equal(2))
+			})
+		})
+
+		It("returns ignored when configured", func() {
+			inTempDir(func() {
+				writeFile("foo", "... bork ... \n // untested sections: ignore \n ... bork ...")
+				count, ignore, lineNumber := configuredUntestedForFile("foo")
+				Expect(count).To(Equal(0))
+				Expect(ignore).To(Equal(true))
 				Expect(lineNumber).To(Equal(2))
 			})
 		})
