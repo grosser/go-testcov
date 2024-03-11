@@ -26,7 +26,28 @@ pkg.go:54.5,56.5
  - Runtime overhead for coverage is about 3%
  - Use `-covermode atomic` when testing parallel algorithms
  - To keep the `coverage.out` file run with `-cover`
+ - `go-testcov version` to see current version
 
+
+## Makefile setup
+
+```
+.PHONY: test
+test: go-testcov ## Unit test
+	$(GOTESTCOV) ./... -covermode atomic
+
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
+GOTESTCOV ?= $(LOCALBIN)/go-testcov
+GOTESTCOV_VERSION ?= v1.8.0
+
+.PHONY: go-testcov
+go-testcov: $(LOCALBIN) # Download go-testcov (replace existing if incorrect version)
+	@(test -f $(GOTESTCOV) && $(GOTESTCOV) version | grep " $(GOTESTCOV_VERSION) " >/dev/null) || \
+	(rm -f $(GOTESTCOV) && echo "Installing $(GOTESTCOV) $(GOTESTCOV_VERSION)" && \
+	GOBIN=$(LOCALBIN) go install github.com/grosser/go-testcov@$(GOTESTCOV_VERSION)
+```
 
 ## Architecture
 
@@ -86,6 +107,11 @@ go-testcov
 - the files from the root folder are symlinked there to make everything load
 - easiest to work from that folder directly
 
+
+## Release
+
+- make new version commit that changes version in readme example + main.go
+- push and tag the commit
 
 Author
 ======

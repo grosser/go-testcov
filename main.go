@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+const version = "v1.8.0"
+
 // reused regex
 var inlineIgnore = "//.*untested section(\\s|,|$)"
 var anyInlineIgnore = regexp.MustCompile(inlineIgnore)
@@ -16,12 +18,19 @@ var perFileIgnore = regexp.MustCompile("// *untested sections: *([0-9]+)")
 var generatedFile = regexp.MustCompile("/*generated.*\\.go$")
 
 // test injection point to enable test coverage of exit behavior
-var exitFunction func(code int) = os.Exit
+var exitFunction = os.Exit
 
 // delegate to runGoTestAndCheckCoverage, so we have an easy to test method
 func main() {
 	argv := os.Args[1:len(os.Args)] // remove executable name
-	exitFunction(runGoTestAndCheckCoverage(argv))
+
+	// print out version instead of go version when asked
+	if len(argv) == 1 && argv[0] == "version" {
+		fmt.Println(version)
+		exitFunction(0)
+	} else { // wrapping in else in case exitFunction was stubbed
+		exitFunction(runGoTestAndCheckCoverage(argv))
+	}
 }
 
 // run go test with given arguments + coverage and inspect coverage after run
