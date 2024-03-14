@@ -44,9 +44,8 @@ func runGoTestAndCheckCoverage(argv []string) (exitCode int) {
 		defer os.Remove(coveragePath)
 	}
 
-	argv = append([]string{"test"}, argv...)
-	argv = append(argv, "-coverprofile", coveragePath)
-	exitCode = runCommand("go", argv...)
+	command := append(append([]string{"go", "test"}, argv...), "-coverprofile", coveragePath)
+	exitCode = runCommand(command...)
 
 	if exitCode != 0 {
 		return exitCode

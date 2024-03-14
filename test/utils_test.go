@@ -50,7 +50,7 @@ var _ = Describe("go-testcov", func() {
 			})
 			Expect(exitCode).To(Equal(1))
 			Expect(stdout).To(Equal(""))
-			Expect(stderr).To(Equal("Could not get exit code for failed program: wut, [--nope]\n"))
+			Expect(stderr).To(Equal("Could not get exit code for failed program: [wut --nope]\n"))
 		})
 	})
 })
