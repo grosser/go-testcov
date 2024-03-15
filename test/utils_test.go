@@ -1,9 +1,10 @@
 package main
 
 import (
+	"os"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"os"
 )
 
 var _ = Describe("go-testcov", func() {
@@ -45,11 +46,11 @@ var _ = Describe("go-testcov", func() {
 		It("returns an error when invalid executable was used", func() {
 			exitCode := -1
 			stdout, stderr := captureAll(func() {
-				exitCode = runCommand("wuuuut", "--nope")
+				exitCode = runCommand("wut", "--nope")
 			})
 			Expect(exitCode).To(Equal(1))
 			Expect(stdout).To(Equal(""))
-			Expect(stderr).To(Equal("Could not get exit code for failed program: wuuuut, [--nope]\n"))
+			Expect(stderr).To(Equal("Could not get exit code for failed program: wut, [--nope]\n"))
 		})
 	})
 })

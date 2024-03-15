@@ -99,9 +99,7 @@ github.com/foo/bar/main.go:5.3,5.18 1 1
 Run `go-testcov` on itself:
 
 ```
-go install
-cd test
-go-testcov
+make
 ```
 
 - all tests are in `test/` so the main library does not force installation of gomega + ginkgo
