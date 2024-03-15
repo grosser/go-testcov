@@ -44,7 +44,17 @@ func runGoTestAndCheckCoverage(argv []string) (exitCode int) {
 		defer os.Remove(coveragePath)
 	}
 
-	command := append(append([]string{"go", "test"}, argv...), "-coverprofile", coveragePath)
+	var command []string
+	if false { // len(argv) >= 1 && argv[0] == "ginko" {
+		//// ginko needs full path or it dumps into each package
+		//coveragePath, _ = filepath.Abs(coveragePath)
+		//
+		//// ginko needs to files (i.e. ./...) to come last + -cover
+		//command = append([]string{"ginko", "-cover", "-coverprofile", coveragePath}, argv[1:]...)
+	} else {
+		command = append(append([]string{"go", "test"}, argv...), "-coverprofile", coveragePath)
+	}
+
 	exitCode = runCommand(command...)
 
 	if exitCode != 0 {
