@@ -42,7 +42,7 @@ LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 GOTESTCOV ?= $(LOCALBIN)/go-testcov
-GOTESTCOV_VERSION ?= v1.9.0
+GOTESTCOV_VERSION ?= v1.10.0
 
 .PHONY: go-testcov
 go-testcov: $(LOCALBIN) # Download go-testcov (replace existing if incorrect version)
@@ -110,7 +110,7 @@ make
 
 ## Release
 
-- make new version commit that changes version in readme example + main.go
+- make new version commit that changes version in readme "Makefile setup" + main.go
 - push and tag the commit
 
 Author
