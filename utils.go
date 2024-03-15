@@ -25,8 +25,8 @@ func splitWithoutEmpty(string string, delimiter rune) []string {
 
 // Run a command and stream output to stdout/err, but return an exit code
 // https://stackoverflow.com/questions/10385551/get-exit-code-go
-func runCommand(name string, args ...string) (exitCode int) {
-	cmd := exec.Command(name, args...)
+func runCommand(args ...string) (exitCode int) {
+	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -40,7 +40,7 @@ func runCommand(name string, args ...string) (exitCode int) {
 		} else {
 			// This will happen (in OSX) if `name` is not available in $PATH,
 			// in this situation, exit code could not be get
-			fmt.Fprintf(os.Stderr, "Could not get exit code for failed program: %v, %v\n", name, args)
+			fmt.Fprintf(os.Stderr, "Could not get exit code for failed program: %v\n", args)
 			exitCode = 1
 		}
 	} else {
