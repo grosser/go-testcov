@@ -12,3 +12,6 @@ build: $(BINARY) ## Build binary
 .PHONY: test
 test: build ## Unit test
 	cd test && ../$(BINARY)
+
+install: ## Install binary
+	go install
