@@ -3,12 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 )
 
-const version = "v1.9.0"
+const version = "v1.10.0"
 
 // reused regex
 var inlineIgnore = "//.*untested section(\\s|,|$)"
@@ -45,12 +46,12 @@ func runGoTestAndCheckCoverage(argv []string) (exitCode int) {
 	}
 
 	var command []string
-	if false { // len(argv) >= 1 && argv[0] == "ginko" {
-		//// ginko needs full path or it dumps into each package
-		//coveragePath, _ = filepath.Abs(coveragePath)
-		//
-		//// ginko needs to files (i.e. ./...) to come last + -cover
-		//command = append([]string{"ginko", "-cover", "-coverprofile", coveragePath}, argv[1:]...)
+	if len(argv) >= 1 && argv[0] == "ginko" {
+		// ginko needs full path or it dumps into each package
+		coveragePath, _ = filepath.Abs(coveragePath)
+
+		// ginko needs to files (i.e. ./...) to come last + -cover
+		command = append([]string{"ginko", "-cover", "-coverprofile", coveragePath}, argv[1:]...)
 	} else {
 		command = append(append([]string{"go", "test"}, argv...), "-coverprofile", coveragePath)
 	}

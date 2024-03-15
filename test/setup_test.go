@@ -87,10 +87,14 @@ func chDir(dir string, fn func()) {
 }
 
 func withFakeGo(content string, fn func()) {
+	withFakeExecutable("go", content, fn)
+}
+
+func withFakeExecutable(name string, content string, fn func()) {
 	withTempDir(func(dir string) {
 		chDir(dir, func() { // need to run somewhere else so we can run go-testcov on itself
 			withEnv("PATH", dir+":"+os.Getenv("PATH"), func() {
-				writeFile(dir+"/go", "#!/bin/sh\n"+content)
+				writeFile(dir+"/"+name, "#!/bin/sh\n"+content)
 				fn()
 			})
 		})

@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -319,6 +320,17 @@ var _ = Describe("go-testcov", func() {
 				)
 				_, err := os.Stat("coverage.out")
 				Expect(err).To(BeNil())
+			})
+		})
+
+		It("can run ginko", func() {
+			withFakeExecutable("ginko", "touch coverage.out\necho ginko \"$@\"", func() {
+				writeFile("foo", "")
+				path, _ := filepath.Abs("coverage.out")
+				expectCommand(
+					func() int { return runGoTestAndCheckCoverage([]string{"ginko", "./..."}) },
+					[]interface{}{0, "ginko -cover -coverprofile " + path + " ./...\n", ""},
+				)
 			})
 		})
 	})
