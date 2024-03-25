@@ -52,6 +52,16 @@ func runGoTestAndCheckCoverage(argv []string) (exitCode int) {
 
 		// ginko needs to files (i.e. ./...) to come last + -cover
 		command = append([]string{"ginko", "-cover", "-coverprofile", coveragePath}, argv[1:]...)
+	} else if len(argv) >= 1 && argv[0] == "check-coverage" {
+		// Allow users to pass in the coverage file path to check coverage of an existing file
+		// without having to re-run the tests. The coverage file may be anywhere on the filesystem.
+		// But the current working directory must contain the source files that were tested.
+		if len(argv) != 2 {
+			_, _ = fmt.Fprintf(os.Stderr, "usage: %v check-coverage <coverage-file>\n", os.Args[0])
+			exitFunction(1)
+		}
+		coveragePath := argv[1]
+		exitFunction(checkCoverage(coveragePath))
 	} else {
 		command = append(append([]string{"go", "test"}, argv...), "-coverprofile", coveragePath)
 	}
