@@ -22,7 +22,7 @@ var exitFunction = os.Exit
 
 // delegate to runGoTestAndCheckCoverage, so we have an easy to test method
 func main() {
-	argv := os.Args[1:len(os.Args)] // remove executable name
+	argv := os.Args[1:len(os.Args)] // remove go-testcov
 
 	// print out version instead of go version when asked
 	if len(argv) == 1 && argv[0] == "version" {
@@ -47,8 +47,11 @@ func runGoTestAndCheckCoverage(argv []string) (exitCode int) {
 	var command []string
 	// user trying to use ginkgo binary, or locally installed one ?
 	if len(argv) >= 1 && strings.HasSuffix("/"+argv[0], "/ginkgo") {
-		// ginkgo needs to files (i.e. ./...) to come last
-		command = append([]string{argv[0], "-cover", "-coverprofile", coveragePath}, argv[1:]...)
+		// - files (i.e. ./...) need to come last
+		// - subcommands need to come first, see https://github.com/onsi/ginkgo/issues/1531
+		length := len(argv)
+		command = argv[0 : length-1]
+		command = append(command, "-cover", "-coverprofile", coveragePath, argv[length-1])
 	} else {
 		command = append(append([]string{"go", "test"}, argv...), "-coverprofile", coveragePath)
 	}
