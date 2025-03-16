@@ -8,7 +8,7 @@
  - Highlight untested code sections with inline `// untested section` comment
  - Onboard untested code (top of the file `// untested sections: 5` comment)
  - Ignore untested files (top of the file `// untested sections: ignore` comment)
- - Run `ginko` with `go-testcov ginko ./...`
+ - Run `ginkgo` with `go-testcov ginkgo ./...`
 
 ```
 go get github.com/grosser/go-testcov
