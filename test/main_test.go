@@ -1,11 +1,9 @@
 package main
 
 import (
-	"os"
-	"path/filepath"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"os"
 )
 
 var _ = Describe("go-testcov", func() {
@@ -323,13 +321,12 @@ var _ = Describe("go-testcov", func() {
 			})
 		})
 
-		It("can run ginko", func() {
-			withFakeExecutable("ginko", "touch coverage.out\necho ginko \"$@\"", func() {
+		It("can run ginkgo", func() {
+			withFakeExecutable("ginkgo", "touch coverage.out\necho ginkgo \"$@\"", func() {
 				writeFile("foo", "")
-				path, _ := filepath.Abs("coverage.out")
 				expectCommand(
-					func() int { return runGoTestAndCheckCoverage([]string{"ginko", "./..."}) },
-					[]interface{}{0, "ginko -cover -coverprofile " + path + " ./...\n", ""},
+					func() int { return runGoTestAndCheckCoverage([]string{"ginkgo", "./..."}) },
+					[]interface{}{0, "ginkgo -cover -coverprofile coverage.out ./...\n", ""},
 				)
 			})
 		})
