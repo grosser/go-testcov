@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const version = "v1.11.0"
+const version = "v1.12.0"
 
 // reused regex
 var inlineIgnore = "//.*untested section(\\s|,|$)"
