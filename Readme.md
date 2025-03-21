@@ -6,9 +6,9 @@
  - 🚀 Fast PRs: avoid comments and CI failures
  - 💰 No 3rd-party payment / integration / security-leaks 
  - Highlight untested code sections with inline `// untested section` comment
- - Onboard untested code (top of the file `// untested sections: 5` comment)
+ - Onboard untested code (top of the file `// untested sections: 5` comment, warns when below)
  - Ignore untested files (top of the file `// untested sections: ignore` comment)
- - Ignore large amounts of poorly tested code (top of the file `// untested sections: 50%` comment)
+ - Ignore large amounts of poorly tested code (top of the file `// untested sections: 50%` comment, does not warn when below that %)
  - Run `ginkgo` with `go-testcov ginkgo ./...`
 
 ```
