@@ -8,6 +8,7 @@
  - Highlight untested code sections with inline `// untested section` comment
  - Onboard untested code (top of the file `// untested sections: 5` comment)
  - Ignore untested files (top of the file `// untested sections: ignore` comment)
+ - Ignore large amounts of poorly tested code (top of the file `// untested sections: 50%` comment)
  - Run `ginkgo` with `go-testcov ginkgo ./...`
 
 ```

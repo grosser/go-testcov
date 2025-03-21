@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"regexp"
 	"sort"
@@ -80,18 +81,26 @@ func checkCoverage(coverageFilePath string) (exitCode int) {
 		}
 
 		displayPath, readPath := normalizeCoveredPath(path, wd)
-		configuredUntested, ignoreUntested, configuredUntestedAtLine := configuredUntestedForFile(readPath)
+		configuredUntested, ignoreUntested, percentUntested, configuredUntestedAtLine := configuredUntestedForFile(readPath)
 		lines := strings.Split(readFile(readPath), "\n")
 		sections = removeSectionsMarkedWithInlineComment(sections, lines)
 		actualUntested := len(sections)
-		details := fmt.Sprintf("(%v current vs %v configured)", actualUntested, configuredUntested)
+		actualUntestedPercent := int(math.Round(float64(actualUntested) / float64(len(lines)) * 100))
 
-		if ignoreUntested || actualUntested == configuredUntested {
-			// exactly as much as we expected, nothing to do
+		// what to show the user
+		var details string
+		if percentUntested {
+			details = fmt.Sprintf("(%v%% current vs %v%% configured)", actualUntestedPercent, configuredUntested)
+		} else {
+			details = fmt.Sprintf("(%v current vs %v configured)", actualUntested, configuredUntested)
+		}
+
+		if ignoreUntested || (!percentUntested && actualUntested == configuredUntested) || (percentUntested && actualUntestedPercent <= configuredUntested) {
+			// exactly as much as we expected, nothing to do ... and for % ignore everything below configured
 		} else if actualUntested > configuredUntested {
 			printUntestedSections(sections, displayPath, details)
 			exitCode = 1 // at least 1 failure, so say to add more tests
-		} else {
+		} else { // never hit in % case
 			_, _ = fmt.Fprintf(
 				os.Stderr,
 				"%v has less untested sections %v, decrement configured untested?\nconfigured on: %v:%v",
@@ -230,18 +239,20 @@ func normalizeCoveredPath(path string, workingDirectory string) (displayPath str
 
 // How many sections are expected to be untested, 0 if not configured
 // also return at what line we found the comment, so we can point the user to it
-func configuredUntestedForFile(path string) (count int, ignore bool, lineNumber int) {
+func configuredUntestedForFile(path string) (count int, ignore bool, percent bool, lineNumber int) {
 	content := readFile(path)
 	match := perFileIgnore.FindStringSubmatch(content)
 	if len(match) == 2 {
 		index := perFileIgnore.FindStringIndex(content)[0]
 		linesBeforeMatch := strings.Count(content[0:index], "\n")
 		if match[1] == "ignore" {
-			return 0, true, linesBeforeMatch + 1
+			return 0, true, false, linesBeforeMatch + 1
+		} else if strings.HasSuffix(match[1], "%") {
+			return stringToInt(match[1][:len(match[1])-1]), false, true, linesBeforeMatch + 1
 		} else {
-			return stringToInt(match[1]), false, linesBeforeMatch + 1
+			return stringToInt(match[1]), false, false, linesBeforeMatch + 1
 		}
 	} else {
-		return 0, false, 0
+		return 0, false, false, 0
 	}
 }
