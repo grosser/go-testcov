@@ -90,3 +90,8 @@ func containsString(s []string, e string) bool {
 	}
 	return false
 }
+
+func lineNumberOfMatch(content string) int {
+	index := perFileIgnore.FindStringIndex(content)[0]
+	return strings.Count(content[0:index], "\n") + 1
+}

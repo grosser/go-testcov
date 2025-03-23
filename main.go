@@ -81,7 +81,7 @@ func checkCoverage(coverageFilePath string) (exitCode int) {
 		}
 
 		displayPath, readPath := normalizeCoveredPath(path, wd)
-		configuredUntested, ignoreUntested, percentUntested, configuredUntestedAtLine := configuredUntestedForFile(readPath)
+		configuredUntested, percentUntested, configuredUntestedAtLine := configuredUntestedForFile(readPath)
 		lines := strings.Split(readFile(readPath), "\n")
 		sections = removeSectionsMarkedWithInlineComment(sections, lines)
 		actualUntested := len(sections)
@@ -95,8 +95,8 @@ func checkCoverage(coverageFilePath string) (exitCode int) {
 			details = fmt.Sprintf("(%v current vs %v configured)", actualUntested, configuredUntested)
 		}
 
-		if ignoreUntested || (!percentUntested && actualUntested == configuredUntested) || (percentUntested && actualUntestedPercent <= configuredUntested) {
-			// exactly as much as we expected, nothing to do ... and for % ignore everything below configured
+		if (!percentUntested && actualUntested == configuredUntested) || (percentUntested && actualUntestedPercent <= configuredUntested) {
+			// exactly as much as we expected, ignored (0%), or <= % than configured: nothing to do
 		} else if actualUntested > configuredUntested {
 			printUntestedSections(sections, displayPath, details)
 			exitCode = 1 // at least 1 failure, so say to add more tests
@@ -237,22 +237,29 @@ func normalizeCoveredPath(path string, workingDirectory string) (displayPath str
 	return path, goPrefixedPath
 }
 
-// How many sections are expected to be untested, 0 if not configured
-// also return at what line we found the comment, so we can point the user to it
-func configuredUntestedForFile(path string) (count int, ignore bool, percent bool, lineNumber int) {
+// How many sections are expected to be untested ?
+//
+// - 0 if not configured
+// - count when configured with "x"
+// - 0% if "ignore"
+// - percentage when configured with "x%"
+//
+// also returns at what line we found the comment, so we can point the user to it
+func configuredUntestedForFile(path string) (count int, percent bool, lineNumber int) {
 	content := readFile(path)
 	match := perFileIgnore.FindStringSubmatch(content)
-	if len(match) == 2 {
-		index := perFileIgnore.FindStringIndex(content)[0]
-		linesBeforeMatch := strings.Count(content[0:index], "\n")
-		if match[1] == "ignore" {
-			return 0, true, false, linesBeforeMatch + 1
-		} else if strings.HasSuffix(match[1], "%") {
-			return stringToInt(match[1][:len(match[1])-1]), false, true, linesBeforeMatch + 1
+	if len(match) == 2 { // found a config ?
+		config := match[1]
+		line := lineNumberOfMatch(content)
+
+		if config == "ignore" {
+			return 0, true, line // 0% which does not warn, so basically ignored
+		} else if strings.HasSuffix(config, "%") {
+			return stringToInt(config[:len(config)-1]), true, line // percent
 		} else {
-			return stringToInt(match[1]), false, false, linesBeforeMatch + 1
+			return stringToInt(config), false, line // count
 		}
 	} else {
-		return 0, false, false, 0
+		return 0, false, 0
 	}
 }
