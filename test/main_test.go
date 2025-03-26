@@ -295,6 +295,22 @@ var _ = Describe("go-testcov", func() {
 			})
 		})
 
+		It("passes when configured to ignore untested", func() {
+			withFakeGo("echo header > coverage.out; echo foo:1.2,1.3 0 >> coverage.out; echo foo:2.2,2.3 0 >> coverage.out", func() {
+				withFakeGoPath(func(goPath string) {
+					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: ignore\n")
+					expectCommand(
+						runGoTestWithCoverage,
+						[]interface{}{
+							0,
+							"",
+							"",
+						},
+					)
+				})
+			})
+		})
+
 		It("can warn when using unmodularized path", func() {
 			withFakeGo("echo header > coverage.out; echo baz.go:1.2,1.3 0 >> coverage.out; echo baz.go:2.2,2.3 0 >> coverage.out", func() {
 				withoutEnv("GOPATH", func() {
@@ -425,7 +441,7 @@ var _ = Describe("go-testcov", func() {
 			inTempDir(func() {
 				writeFile("foo", "... bork ... \n // untested sections: ignore \n ... bork ...")
 				count, percent, line := configuredUntestedForFile("foo")
-				Expect(count).To(Equal(0))
+				Expect(count).To(Equal(100))
 				Expect(percent).To(Equal(true))
 				Expect(line).To(Equal(2))
 			})

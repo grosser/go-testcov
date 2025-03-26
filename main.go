@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const version = "v1.12.0"
+const version = "v1.12.1"
 
 // reused regex
 var inlineIgnore = "//.*untested section(\\s|,|$)"
@@ -241,8 +241,8 @@ func normalizeCoveredPath(path string, workingDirectory string) (displayPath str
 //
 // - 0 if not configured
 // - count when configured with "x"
-// - 0% if "ignore"
 // - percentage when configured with "x%"
+// - 100% if "ignore"
 //
 // also returns at what line we found the comment, so we can point the user to it
 func configuredUntestedForFile(path string) (count int, percent bool, lineNumber int) {
@@ -253,7 +253,7 @@ func configuredUntestedForFile(path string) (count int, percent bool, lineNumber
 		line := lineNumberOfMatch(content)
 
 		if config == "ignore" {
-			return 0, true, line // 0% which does not warn, so basically ignored
+			return 100, true, line // 100% which does not warn for any amount, so basically ignored
 		} else if strings.HasSuffix(config, "%") {
 			return stringToInt(config[:len(config)-1]), true, line // percent
 		} else {
