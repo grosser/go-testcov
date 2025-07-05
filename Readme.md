@@ -43,7 +43,7 @@ LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 GOTESTCOV ?= $(LOCALBIN)/go-testcov
-GOTESTCOV_VERSION ?= v1.12.1
+GOTESTCOV_VERSION ?= v1.12.2
 
 .PHONY: go-testcov
 go-testcov: $(LOCALBIN) # Download go-testcov (replace existing if incorrect version)
