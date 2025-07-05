@@ -12,7 +12,7 @@ import (
 const version = "v1.12.1"
 
 // reused regex
-var inlineIgnore = "//.*untested section(\\s|,|$)"
+var inlineIgnore = "//.*untested section(\\s|:|,|$)"
 var anyInlineIgnore = regexp.MustCompile(inlineIgnore)
 var startsWithInlineIgnore = regexp.MustCompile("^\\s*" + inlineIgnore)
 var perFileIgnore = regexp.MustCompile("// *untested sections: *(\\S+)")
