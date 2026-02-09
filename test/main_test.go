@@ -136,7 +136,7 @@ var _ = Describe("go-testcov", func() {
 		})
 
 		It("fails when configured untested is below actual untested", func() {
-			withFakeGo("echo header > coverage.out; echo foo:2.2,2.3 0 >> coverage.out; echo foo:1.2,1.3 0 >> coverage.out", func() {
+			withFakeGo("echo header > coverage.out; echo foo:1.2,1.3 0 >> coverage.out; echo foo:2.2,2.3 0 >> coverage.out", func() {
 				withFakeGoPath(func(goPath string) {
 					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: 1\n")
 					expectCommand(
@@ -295,7 +295,7 @@ var _ = Describe("go-testcov", func() {
 			})
 		})
 
-		It("passes when configured to ignore untested", func() {
+		It("passes when configured to ignore all untested", func() {
 			withFakeGo("echo header > coverage.out; echo foo:1.2,1.3 0 >> coverage.out; echo foo:2.2,2.3 0 >> coverage.out", func() {
 				withFakeGoPath(func(goPath string) {
 					writeFile(joinPath(goPath, "src", "foo"), "// untested sections: ignore\n")
@@ -375,6 +375,67 @@ var _ = Describe("go-testcov", func() {
 				expectCommand(
 					func() int { return runGoTestAndCheckCoverage([]string{"ginkgo", "./..."}) },
 					[]interface{}{0, "ginkgo -cover -coverprofile coverage.out ./...\n", ""},
+				)
+			})
+		})
+
+		Context("untested block", func() {
+			It("passes when configured to ignore untested block", func() {
+				withFakeGo(
+					// example taken from Readme.md + 1 line
+					"echo header > coverage.out; echo foo:2.13,3.13 0 0 >> coverage.out; echo foo:3.13,4.4 0 0 >> coverage.out; echo foo:6.3,6.18 0 0 >> coverage.out",
+					func() {
+						withFakeGoPath(func(goPath string) {
+							// example taken from Readme.md + 1 line
+							writeFile(joinPath(goPath, "src", "foo"), "// untested block\nfunc main() {\n  if foo(1) {\n      fmt.Print(\"Hi\")\n  }\n  fmt.Print(\"Ho\")\n}")
+							expectCommand(
+								runGoTestWithCoverage,
+								[]interface{}{0, "", ""},
+							)
+						})
+					},
+				)
+			})
+
+			It("fails when missing coverage is after configured untested block ends", func() {
+				withFakeGo(
+					// example taken from Readme.md + 1 line
+					"echo header > coverage.out; echo foo:2.13,3.13 0 0 >> coverage.out; echo foo:3.13,4.4 0 0 >> coverage.out; echo foo:8.3,8.18 0 0 >> coverage.out",
+					func() {
+						withFakeGoPath(func(goPath string) {
+							// example taken from Readme.md + 1 line
+							writeFile(joinPath(goPath, "src", "foo"), "// untested block\nfunc main() {\n  if foo(1) {\n      fmt.Print(\"Hi\")\n  }\n  fmt.Print(\"Ho\")\n}\nuntested-here")
+							expectCommand(
+								runGoTestWithCoverage,
+								[]interface{}{
+									1,
+									"",
+									"foo new untested sections introduced (1 current vs 0 configured)\nfoo:8.3,8.18\n",
+								},
+							)
+						})
+					},
+				)
+			})
+
+			It("warns when untested block is misconfigured", func() {
+				withFakeGo(
+					// example taken from Readme.md + 1 line
+					"echo header > coverage.out; echo foo:2.13,3.13 0 0 >> coverage.out; echo foo:3.13,4.4 0 0 >> coverage.out; echo foo:8.3,8.18 0 0 >> coverage.out",
+					func() {
+						withFakeGoPath(func(goPath string) {
+							// example taken from Readme.md + 1 line
+							writeFile(joinPath(goPath, "src", "foo"), "\t\t\t\t\t// untested block\nfunc main() {\n  if foo(1) {\n      fmt.Print(\"Hi\")\n  }\n  fmt.Print(\"Ho\")\n}\nuntested-here")
+							expectCommand(
+								runGoTestWithCoverage,
+								[]interface{}{
+									1,
+									"",
+									"go-testcov: unable to find the end of the `// untested block` started between 1 and 2, a line starting with \t\t\t\t\t}foo new untested sections introduced (3 current vs 0 configured)\nfoo:2.13,3.13\nfoo:3.13,4.4\nfoo:8.3,8.18\n",
+								},
+							)
+						})
+					},
 				)
 			})
 		})

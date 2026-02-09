@@ -9,6 +9,7 @@
  - Onboard untested code (top of the file `// untested sections: 5` comment, warns when below)
  - Ignore untested files (top of the file `// untested sections: ignore` comment)
  - Ignore large amounts of poorly tested code (top of the file `// untested sections: 50%` comment, does not warn when below that %)
+ - Ignore untested functions with `// untested section` comment in function header
  - Run `ginkgo` with `go-testcov ginkgo ./...`
 
 ```
@@ -32,7 +33,7 @@ pkg.go:54.5,56.5
  - `go-testcov version` to see current version
 
 
-## Makefile setup
+## Makefile setup to use a consistent version of go-testcov
 
 ```
 .PHONY: test
@@ -108,6 +109,11 @@ make
 - the files from the root folder are symlinked there to make everything load
 - easiest to work from that folder directly
 
+### inspecting coverage output
+
+- create a new `foo/main.go` file with the code you want to inspect
+- `go test -cover -coverprofile cov.out foo/main.go`
+- `cat cov.out`
 
 ## Release
 
