@@ -15,6 +15,7 @@ const version = "v1.12.2"
 var inlineIgnore = "//.*untested section(\\s|:|,|$)"
 var anyInlineIgnore = regexp.MustCompile(inlineIgnore)
 var startsWithInlineIgnore = regexp.MustCompile("^\\s*" + inlineIgnore)
+var blockIgnore = regexp.MustCompile("(?m)^([\t ]*)// *untested block(\\s|:|,|$)")
 var perFileIgnore = regexp.MustCompile("// *untested sections: *(\\S+)")
 var generatedFile = regexp.MustCompile("/*generated.*\\.go$")
 
@@ -133,7 +134,19 @@ func printUntestedSections(sections []Section, displayPath string, details strin
 func removeSectionsMarkedWithInlineComment(sections []Section, lines []string) []Section {
 	uncheckedSections := sections
 	sections = []Section{}
-	for _, section := range uncheckedSections {
+	ignoredBlockEndLine := -1
+
+	for i, section := range uncheckedSections {
+		// if we are still in an ignored block then just keep skipping
+		if section.endLine <= ignoredBlockEndLine {
+			continue
+		}
+
+		// starts a new ignore block, then skip
+		if ignoredBlockEndLine = findNextIgnoreBlock(uncheckedSections, i, lines); ignoredBlockEndLine != -1 {
+			continue
+		}
+
 		for lineNumber := section.startLine; lineNumber <= section.endLine; lineNumber++ {
 			if anyInlineIgnore.MatchString(lines[lineNumber-1]) {
 				break // section is ignored
@@ -145,6 +158,42 @@ func removeSectionsMarkedWithInlineComment(sections []Section, lines []string) [
 		}
 	}
 	return sections
+}
+
+// search the codeless section (comments) for a block ignore
+// and if found start a new ignore block
+func findNextIgnoreBlock(sections []Section, current int, lines []string) (ignoreBlockEndLine int) {
+	prevEndLine := 1
+	if current != 0 {
+		prevEndLine = sections[current-1].endLine
+	}
+
+	currentStartLine := sections[current].startLine
+	codeless := strings.Join(lines[prevEndLine-1:currentStartLine-1], "\n")
+
+	// was there an ignore start ?
+	match := blockIgnore.FindStringSubmatch(codeless)
+	if match == nil {
+		return -1
+	}
+
+	// ... then return where it ends
+	whitespace := match[1]
+	search := whitespace + "}"
+	remainingCode := lines[currentStartLine-1:]
+	for i, line := range remainingCode {
+		if strings.HasPrefix(line, search) {
+			return currentStartLine + i
+		}
+	}
+
+	// untested section
+	_, _ = fmt.Fprintf(
+		os.Stderr,
+		"go-testcov: unable to find the end of the `// untested block` started between %d and %d, a line starting with %v",
+		prevEndLine, currentStartLine, search,
+	)
+	return -1
 }
 
 func groupSectionsByPath(sections []Section) (grouped map[string][]Section) {
