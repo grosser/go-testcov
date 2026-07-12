@@ -200,12 +200,7 @@ func findNextIgnoreBlock(sections []Section, current int, lines []string) (ignor
 func groupSectionsByPath(sections []Section) (grouped map[string][]Section) {
 	grouped = map[string][]Section{}
 	for _, section := range sections {
-		path := section.path
-		group, ok := grouped[path]
-		if !ok {
-			grouped[path] = []Section{}
-		}
-		grouped[path] = append(group, section)
+		grouped[section.path] = append(grouped[section.path], section)
 	}
 	return
 }
