@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -42,7 +43,7 @@ func runGoTestAndCheckCoverage(argv []string) (exitCode int) {
 
 	// allow users to keep the coverage.out file when they passed -cover manually
 	// TODO: parse options to find the location the user wanted and use+keep that
-	if !containsString(argv, "-cover") {
+	if !slices.Contains(argv, "-cover") {
 		defer os.Remove(coveragePath)
 	}
 
