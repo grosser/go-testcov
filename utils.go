@@ -82,15 +82,6 @@ func stringToInt(string string) int {
 	return converted
 }
 
-func containsString(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
-
 func lineNumberOfMatch(content string) int {
 	index := perFileIgnore.FindStringIndex(content)[0]
 	return strings.Count(content[0:index], "\n") + 1
