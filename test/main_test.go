@@ -511,6 +511,20 @@ var _ = Describe("go-testcov", func() {
 			})
 			Expect(stderr).To(Equal(""))
 		})
+
+		It("does not warn when one of multiple sections on the line is uncovered", func() {
+			stderr := captureStderr(func() {
+				warnCoveredInlineIgnore(
+					"foo.go",
+					[]Section{
+						{"foo.go", 1, 2, 1, 3, 100002, 1},
+						{"foo.go", 1, 4, 1, 6, 100004, 0},
+					},
+					[]string{"foo || bar // untested section"},
+				)
+			})
+			Expect(stderr).To(Equal(""))
+		})
 	})
 
 	Describe("getSections", func() {

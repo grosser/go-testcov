@@ -85,7 +85,7 @@ func checkCoverage(coverageFilePath string) (exitCode int) {
 		lines := strings.Split(readFile(readPath), "\n")
 
 		// print warnings logs for covered sections
-		warnCoveredInlineIgnore(displayPath, coveredSections(sections), lines)
+		warnCoveredInlineIgnore(displayPath, sections, lines)
 
 		untested := removeSectionsMarkedWithInlineComment(untestedFromSections(sections), lines)
 		actualUntested := len(untested)
@@ -149,7 +149,7 @@ func removeSectionsMarkedWithInlineComment(sections []Section, lines []string) [
 			continue
 		}
 
-		// NOTE: keep inline-ignore matching in sync with warnCoveredInlineIgnore
+		// same inline-ignore rules as warnCoveredInlineIgnore, keep the two in sync
 		for lineNumber := section.startLine; lineNumber <= section.endLine; lineNumber++ {
 			if anyInlineIgnore.MatchString(lines[lineNumber-1]) {
 				break // section is ignored
@@ -243,29 +243,19 @@ func untestedFromSections(sections []Section) (untested []Section) {
 	return
 }
 
-// keep only sections that were covered (callCount > 0)
-func coveredSections(sections []Section) (covered []Section) {
-	covered = []Section{}
-	for _, section := range sections {
-		if section.callCount > 0 {
-			covered = append(covered, section)
-		}
-	}
-	return
-}
-
 // warn when inline ignore markers point to code that is actually covered
 func warnCoveredInlineIgnore(path string, sections []Section, lines []string) {
 	for i, line := range lines {
 		sourceLine := i + 1
 
-		if anyInlineIgnore.MatchString(line) && anySectionIncludesLine(sections, sourceLine) {
+		// same inline-ignore rules as removeSectionsMarkedWithInlineComment, keep the two in sync
+		if anyInlineIgnore.MatchString(line) && allSectionsOnLineCovered(sections, sourceLine) {
 			_, _ = fmt.Fprintf(
 				os.Stderr,
 				"go-testcov (warn): %v:%v has `// untested section` but is covered\n",
 				path, sourceLine,
 			)
-		} else if startsWithInlineIgnore.MatchString(line) && anySectionStartsAtLine(sections, sourceLine+1) {
+		} else if startsWithInlineIgnore.MatchString(line) && allSectionsStartingAtLineCovered(sections, sourceLine+1) {
 			_, _ = fmt.Fprintf(
 				os.Stderr,
 				"go-testcov (warn): %v:%v has `// untested section` but the code below is covered\n",
@@ -275,24 +265,32 @@ func warnCoveredInlineIgnore(path string, sections []Section, lines []string) {
 	}
 }
 
-// true when any section spans this source line
-func anySectionIncludesLine(sections []Section, line int) bool {
+// true when at least one section spans this source line and all such sections are covered
+func allSectionsOnLineCovered(sections []Section, line int) bool {
+	covered := false
 	for _, section := range sections {
 		if section.startLine <= line && line <= section.endLine {
-			return true
+			if section.callCount == 0 {
+				return false
+			}
+			covered = true
 		}
 	}
-	return false
+	return covered
 }
 
-// true when any section starts exactly on this line
-func anySectionStartsAtLine(sections []Section, line int) bool {
+// true when at least one section starts exactly on this line and all such sections are covered
+func allSectionsStartingAtLineCovered(sections []Section, line int) bool {
+	covered := false
 	for _, section := range sections {
 		if section.startLine == line {
-			return true
+			if section.callCount == 0 {
+				return false
+			}
+			covered = true
 		}
 	}
-	return false
+	return covered
 }
 
 // find relative path of file in current directory
