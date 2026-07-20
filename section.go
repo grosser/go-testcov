@@ -14,6 +14,7 @@ type Section struct {
 	endLine   int
 	endChar   int
 	sortValue int
+	callCount int
 }
 
 // NewSection parses a coverage line as produces by `go test`, for example "foo/bar.go:1.2,3.5 1 0"
@@ -33,7 +34,9 @@ func NewSection(line string) Section {
 	// allow sorting multiple sections from the same path
 	sortValue := startLine*100000 + startChar
 
-	return Section{path, startLine, startChar, endLine, endChar, sortValue}
+	callCount := stringToInt(locations[len(locations)-1])
+
+	return Section{path, startLine, startChar, endLine, endChar, sortValue, callCount}
 }
 
 func (s Section) Location() string {
