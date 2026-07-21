@@ -501,6 +501,28 @@ var _ = Describe("go-testcov", func() {
 			Expect(stderr).To(Equal("go-testcov (warn): foo.go:1 has `// untested section` but the code below is covered\n"))
 		})
 
+		It("does not warn when inline comment has random suffix", func() {
+			stderr := captureStderr(func() {
+				warnCoveredInlineIgnore(
+					"foo.go",
+					[]Section{{"foo.go", 1, 2, 1, 3, 100002, 1}},
+					[]string{"foo // untested section random"},
+				)
+			})
+			Expect(stderr).To(Equal(""))
+		})
+
+		It("does not warn when above-line comment has random suffix", func() {
+			stderr := captureStderr(func() {
+				warnCoveredInlineIgnore(
+					"foo.go",
+					[]Section{{"foo.go", 2, 2, 2, 3, 200002, 1}},
+					[]string{"// untested section random", "foo"},
+				)
+			})
+			Expect(stderr).To(Equal(""))
+		})
+
 		It("does not warn when inline comment is on uncovered code", func() {
 			stderr := captureStderr(func() {
 				warnCoveredInlineIgnore(
@@ -524,6 +546,14 @@ var _ = Describe("go-testcov", func() {
 				)
 			})
 			Expect(stderr).To(Equal(""))
+		})
+
+		It("keeps random suffix inline comments as ignores", func() {
+			sections := removeSectionsMarkedWithInlineComment(
+				[]Section{{"foo.go", 1, 2, 1, 3, 100002, 0}},
+				[]string{"foo // untested section random"},
+			)
+			Expect(sections).To(Equal([]Section{}))
 		})
 	})
 

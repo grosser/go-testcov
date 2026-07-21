@@ -15,6 +15,7 @@ const version = "v1.13.0"
 var inlineIgnore = "//.*untested section(\\s|:|,|$)"
 var anyInlineIgnore = regexp.MustCompile(inlineIgnore)
 var startsWithInlineIgnore = regexp.MustCompile("^\\s*" + inlineIgnore)
+var randomInlineIgnore = regexp.MustCompile(`//.*untested section\s+random(\s|:|,|$)`)
 var blockIgnore = regexp.MustCompile("(?m)^([\t ]*)// *untested block(\\s|:|,|$)")
 var perFileIgnore = regexp.MustCompile("// *untested sections: *(\\S+)")
 var generatedFile = regexp.MustCompile("/*generated.*\\.go$")
@@ -190,7 +191,6 @@ func findNextIgnoreBlock(sections []Section, current int, lines []string) (ignor
 		}
 	}
 
-	// untested section
 	_, _ = fmt.Fprintf(
 		os.Stderr,
 		"go-testcov: unable to find the end of the `// untested block` started between %d and %d, a line starting with %v",
@@ -247,6 +247,11 @@ func untestedFromSections(sections []Section) (untested []Section) {
 func warnCoveredInlineIgnore(path string, sections []Section, lines []string) {
 	for i, line := range lines {
 		sourceLine := i + 1
+
+		// skip flaky-coverage warnings (goroutines, timing, randomness)
+		if randomInlineIgnore.MatchString(line) {
+			continue
+		}
 
 		// same inline-ignore rules as removeSectionsMarkedWithInlineComment, keep the two in sync
 		if anyInlineIgnore.MatchString(line) && allSectionsOnLineCovered(sections, sourceLine) {

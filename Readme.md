@@ -29,6 +29,7 @@ pkg.go:54.5,56.5
  - Docs for [coverage in go](https://blog.golang.org/cover)
  - Runtime overhead for coverage is about 3%
  - Use `-covermode atomic` when testing parallel algorithms
+ - Use `// untested section random` to skip flaky-coverage warnings (goroutines, timing, randomness)
  - To keep the `coverage.out` file run with `-cover`
  - `go-testcov version` to see current version
 
