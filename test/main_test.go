@@ -254,7 +254,7 @@ var _ = Describe("go-testcov", func() {
 					writeFile(joinPath(goPath, "src", "foo"), "foo // untested section\n")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{0, "", "go-testcov (warn): foo:1 has `// untested section` but is covered\n"},
+						[]interface{}{0, "", "go-testcov (warn): foo:1 has `// untested section` but is tested\n"},
 					)
 				})
 			})
@@ -266,7 +266,7 @@ var _ = Describe("go-testcov", func() {
 					writeFile(joinPath(goPath, "src", "foo"), "// untested section\nfoo\n")
 					expectCommand(
 						runGoTestWithCoverage,
-						[]interface{}{0, "", "go-testcov (warn): foo:1 has `// untested section` but the code below is covered\n"},
+						[]interface{}{0, "", "go-testcov (warn): foo:1 has `// untested section` but the code below is tested\n"},
 					)
 				})
 			})
@@ -487,7 +487,7 @@ var _ = Describe("go-testcov", func() {
 					[]string{"foo // untested section"},
 				)
 			})
-			Expect(stderr).To(Equal("go-testcov (warn): foo.go:1 has `// untested section` but is covered\n"))
+			Expect(stderr).To(Equal("go-testcov (warn): foo.go:1 has `// untested section` but is tested\n"))
 		})
 
 		It("warns when inline comment is above covered code", func() {
@@ -498,7 +498,7 @@ var _ = Describe("go-testcov", func() {
 					[]string{"// untested section", "foo"},
 				)
 			})
-			Expect(stderr).To(Equal("go-testcov (warn): foo.go:1 has `// untested section` but the code below is covered\n"))
+			Expect(stderr).To(Equal("go-testcov (warn): foo.go:1 has `// untested section` but the code below is tested\n"))
 		})
 
 		It("does not warn when inline comment has random suffix", func() {

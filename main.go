@@ -253,13 +253,13 @@ func warnCoveredInlineIgnore(path string, sections []Section, lines []string) {
 		if anyInlineIgnore.MatchString(line) && allSectionsOnLineCovered(sections, sourceLine) {
 			_, _ = fmt.Fprintf(
 				os.Stderr,
-				"go-testcov (warn): %v:%v has `// untested section` but is covered\n",
+				"go-testcov (warn): %v:%v has `// untested section` but is tested\n",
 				path, sourceLine,
 			)
 		} else if startsWithInlineIgnore.MatchString(line) && allSectionsStartingAtLineCovered(sections, sourceLine+1) {
 			_, _ = fmt.Fprintf(
 				os.Stderr,
-				"go-testcov (warn): %v:%v has `// untested section` but the code below is covered\n",
+				"go-testcov (warn): %v:%v has `// untested section` but the code below is tested\n",
 				path, sourceLine,
 			)
 		}
